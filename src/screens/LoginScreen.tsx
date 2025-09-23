@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useState } from 'react';
-import {auth} from './firebaseconfig';
+import {auth, db} from './firebaseconfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getDoc, doc } from 'firebase/firestore';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -13,8 +14,32 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
     try{
-      await signInWithEmailAndPassword(auth, email, password);
-      Alert.alert("Has iniciado sesión correctamente");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+
+      if(userDoc.exists()){
+        const userData = userDoc.data();
+        const userRole = userData.role;
+
+        switch(userRole){
+          case 'admin':
+            navigation.replace("AdminDashboard");
+            break;
+          case 'staff':
+            navigation.replace("StaffDashboard");
+            break;
+          case 'beneficiary':
+            navigation.replace("BeneficiaryDashboard");
+          default:
+            Alert.alert("Error", "Rol de usuario no reconocido");
+        }
+
+      }else{
+        Alert.alert("Error", "Datos de usuario no encontrados");
+      }
+
     }catch (error:any){
       Alert.alert("Error", error.message);
     }
