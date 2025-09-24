@@ -1,9 +1,17 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 
 export default function BeneficiaryDashboard({ navigation }: any) {
+  const handleLogout = () => {
+    // Instead of goBack(), use navigate to Login or reset the stack
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }],
+    });
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Bienvenido</Text>
@@ -25,14 +33,26 @@ export default function BeneficiaryDashboard({ navigation }: any) {
           <Text style={styles.buttonText}>Comunidades</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Historial de Entregas</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Notificaciones</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Configuración</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity 
           style={styles.logoutButton}
-          onPress={() => navigation.goBack()}
+          onPress={handleLogout}
         >
           <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -40,6 +60,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
     backgroundColor: "#1E90FF",
@@ -53,8 +76,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     padding: 20,
   },
   welcomeText: {
@@ -62,6 +83,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 30,
     color: "#333",
+    textAlign: "center",
   },
   button: {
     backgroundColor: "#1E90FF",
