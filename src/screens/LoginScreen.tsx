@@ -32,6 +32,7 @@ export default function LoginScreen({ navigation }: any) {
             break;
           case 'beneficiary':
             navigation.replace("BeneficiaryDashboard");
+            break;
           default:
             Alert.alert("Error", "Rol de usuario no reconocido");
         }
