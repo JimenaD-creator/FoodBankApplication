@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function AdminDashboard({ navigation }: any) {
@@ -20,98 +20,165 @@ export default function AdminDashboard({ navigation }: any) {
     return() => clearInterval(interval);
     
   }, [])
+  
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Dashboard</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications-outline" size={24} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate("ProfileScreen")}>
-            <Image
-              source={require("../../../assets/usuario.png")} 
-              style={styles.avatar}
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Image 
+              source={require('../../../assets/splash_1.png')} 
+              style={styles.headerLogo}
+              resizeMode="contain"
             />
-          </TouchableOpacity>
+            <Text style={styles.title}>Dashboard</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.iconButton}>
+              <View style={styles.notificationBadge}>
+                <Ionicons name="notifications" size={24} color="#E53E3E" />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.avatarContainer}
+              onPress={() => navigation.navigate("ProfileScreen")}
+            >
+              <Image
+                source={require("../../../assets/usuario.png")} 
+                style={styles.avatar}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Contenido principal */}
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text style={styles.sectionTitle}>📊 Métricas principales</Text>
+
+          <View style={styles.grid}>
+            <TouchableOpacity
+              style={[styles.card, styles.beneficiariesCard]}
+              onPress={() => navigation.navigate("BeneficiariesList")}
+            >
+              <View style={styles.cardIcon}>
+                <Ionicons name="people" size={32} color="#4CAF50" />
+              </View>
+              <Text style={styles.cardValue}>{beneficiariesCount}</Text>
+              <Text style={styles.cardLabel}>Beneficiarios</Text>
+            </TouchableOpacity>
+
+            <View style={[styles.card, styles.deliveriesCard]}>
+              <View style={styles.cardIcon}>
+                <Ionicons name="cube" size={32} color="#2196F3" />
+              </View>
+              <Text style={styles.cardValue}>{deliveriesCount}</Text>
+              <Text style={styles.cardLabel}>Despensas</Text>
+            </View>
+
+            <View style={[styles.card, styles.staffCard]}>
+              <View style={styles.cardIcon}>
+                <Ionicons name="person" size={32} color="#FF9800" />
+              </View>
+              <Text style={styles.cardValue}>{volunteersCount}</Text>
+              <Text style={styles.cardLabel}>Staff activo</Text>
+            </View>
+
+            <View style={[styles.card, styles.communitiesCard]}>
+              <View style={styles.cardIcon}>
+                <Ionicons name="location" size={32} color="#E53E3E" />
+              </View>
+              <Text style={styles.cardValue}>{communitiesCount}</Text>
+              <Text style={styles.cardLabel}>Comunidades</Text>
+            </View>
+          </View>
+
+          <Text style={styles.sectionTitle}>🔔 Últimas actualizaciones</Text>
+          
+          <View style={styles.updatesContainer}>
+            <View style={[styles.updateCard, styles.successUpdate]}>
+              <View style={styles.updateIcon}>
+                <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+              </View>
+              <View style={styles.updateContent}>
+                <Text style={styles.updateText}>Se entregaron 30 despensas en Zapopan</Text>
+                <Text style={styles.updateTime}>Hace 2 horas</Text>
+              </View>
+            </View>
+            
+            <View style={[styles.updateCard, styles.infoUpdate]}>
+              <View style={styles.updateIcon}>
+                <Ionicons name="location-outline" size={24} color="#2196F3" />
+              </View>
+              <View style={styles.updateContent}>
+                <Text style={styles.updateText}>Nueva comunidad programada: Tonalá</Text>
+                <Text style={styles.updateTime}>Hace 5 horas</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Acciones rápidas */}
+          <Text style={styles.sectionTitle}>⚡ Acciones rápidas</Text>
+          
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.adminRegisterButton]}
+              onPress={() => navigation.navigate("Registrar", { userType: "admin", isFromAdminDashboard: true })}
+            >
+              <Ionicons name="person-add" size={24} color="#fff" />
+              <Text style={styles.actionButtonText}>Registrar Admin</Text>
+            </TouchableOpacity>
+
+            {/*<TouchableOpacity
+              style={[styles.actionButton, styles.staffRegisterButton]}
+              onPress={() => navigation.navigate("Registrar", { userType: "staff", isFromAdminDashboard: true })}
+            >
+              <Ionicons name="people-outline" size={24} color="#fff" />
+              <Text style={styles.actionButtonText}>Registrar Staff</Text>
+            </TouchableOpacity>*/}
+          </View>
+        </ScrollView>
       </View>
-
-      {/* Contenido principal */}
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Métricas principales</Text>
-
-        <View style={styles.grid}>
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate("BeneficiariesList")}
-          >
-            <Ionicons name="people-outline" size={28} color="#4CAF50" />
-            <Text style={styles.cardValue}>{beneficiariesCount}</Text>
-            <Text style={styles.cardLabel}>Beneficiarios</Text>
-          </TouchableOpacity>
-
-          <View style={styles.card}>
-            <Ionicons name="cube-outline" size={28} color="#2196F3" />
-            <Text style={styles.cardValue}>{deliveriesCount}</Text>
-            <Text style={styles.cardLabel}>Despensas</Text>
-          </View>
-
-          <View style={styles.card}>
-            <Ionicons name="person-outline" size={28} color="#FF9800" />
-            <Text style={styles.cardValue}>{volunteersCount}</Text>
-            <Text style={styles.cardLabel}>Staff activo</Text>
-          </View>
-
-          <View style={styles.card}>
-            <Ionicons name="location-outline" size={28} color="#FF9800" />
-            <Text style={styles.cardValue}>{communitiesCount}</Text>
-            <Text style={styles.cardLabel}>Comunidades</Text>
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Últimas actualizaciones</Text>
-        <View style={styles.updateCard}>
-          <Text style={styles.updateText}>✔️ Se entregaron 30 despensas en Zapopan</Text>
-          <Text style={styles.updateTime}>Hace 2 horas</Text>
-        </View>
-        <View style={styles.updateCard}>
-          <Text style={styles.updateText}>📌 Nueva comunidad programada: Tonalá</Text>
-          <Text style={styles.updateTime}>Hace 5 horas</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.adminRegisterButton}
-          onPress={() => navigation.navigate("Registrar", { defaultRole: "admin", isFromAdminDashboard: true })}
-        >
-        <Text style={styles.adminRegisterButtonText}>Registrar Administrador</Text>
-</TouchableOpacity>
-      </ScrollView>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 40,
-    backgroundColor: "#fff",
-    elevation: 5,
+    paddingVertical: 15,
+    paddingTop: 50,
+    backgroundColor: "#D3D3D3",
+    elevation: 8,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerLogo: {
+    width: 60,
+    height: 50,
+    marginRight: 10,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "black",
+    color: "#000",
   },
   headerRight: {
     flexDirection: "row",
@@ -119,6 +186,18 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     marginRight: 15,
+    padding: 8,
+  },
+  notificationBadge: {
+    backgroundColor: "rgba(229, 62, 62, 0.1)",
+    borderRadius: 20,
+    padding: 8,
+  },
+  avatarContainer: {
+    borderWidth: 2,
+    borderColor: "#E53E3E",
+    borderRadius: 20,
+    padding: 2,
   },
   avatar: {
     width: 36,
@@ -132,7 +211,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#333",
+    marginTop: 10,
+    color: "#2D3748",
   },
   grid: {
     flexDirection: "row",
@@ -142,57 +222,124 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "48%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 16,
+    padding: 20,
     alignItems: "center",
     marginBottom: 15,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  beneficiariesCard: {
+    backgroundColor: "rgba(196, 226, 196, 0.95)",
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
+  },
+  deliveriesCard: {
+    backgroundColor: "rgba(187, 222, 251, 0.95)",
+    borderLeftWidth: 4,
+    borderLeftColor: "#2196F3",
+  },
+  staffCard: {
+    backgroundColor: "rgba(255, 235, 153, 0.95)",
+    borderLeftWidth: 4,
+    borderLeftColor: "#FF9800",
+  },
+  communitiesCard: {
+    backgroundColor: "rgba(255, 204, 204, 0.95)",
+    borderLeftWidth: 4,
+    borderLeftColor: "#E53E3E",
+  },
+  cardIcon: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  cardValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#2D3748",
+  },
+  cardLabel: {
+    fontSize: 14,
+    color: "#4A5568",
+    fontWeight: "500",
+  },
+  updatesContainer: {
+    marginBottom: 25,
+  },
+  updateCard: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
     elevation: 2,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 5,
   },
-  cardValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 5,
+  successUpdate: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
   },
-  cardLabel: {
-    fontSize: 14,
-    color: "#666",
+  infoUpdate: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#2196F3",
   },
-  updateCard: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    elevation: 1,
+  updateIcon: {
+    marginRight: 12,
+    justifyContent: "center",
+  },
+  updateContent: {
+    flex: 1,
   },
   updateText: {
     fontSize: 14,
-    color: "#333",
+    color: "#2D3748",
+    fontWeight: "500",
   },
   updateTime: {
     fontSize: 12,
-    color: "#999",
-    marginTop: 5,
+    color: "#718096",
+    marginTop: 4,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    marginLeft: 50,
+    borderRadius: 25,
+    width: "68%",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   adminRegisterButton: {
-  backgroundColor: "#1E90FF", // azul brillante
-  paddingVertical: 15,
-  paddingHorizontal: 20,
-  borderRadius: 8,
-  alignItems: "center",
-  marginVertical: 15,
-},
-
-adminRegisterButtonText: {
-  color: "#fff",
-  fontSize: 16,
-  fontWeight: "bold",
-},
-  
+    backgroundColor: "#E53E3E",
+  },
+  staffRegisterButton: {
+    backgroundColor: "#FF9800",
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
 });
-
-

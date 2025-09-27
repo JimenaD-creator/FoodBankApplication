@@ -1,29 +1,32 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ImageBackground } from 'react-native';
 import { useState } from 'react';
-import {auth, db} from './firebaseconfig';
+import { auth, db } from './firebaseconfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { getDoc, doc } from 'firebase/firestore';
+import { CloudinaryImage } from '@cloudinary/url-gen/assets/CloudinaryImage';
+import { backgroundRemoval } from '@cloudinary/url-gen/actions/effect';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-    if(!email || !password){
+    if (!email || !password) {
       Alert.alert("Error", "Por favor ingresa correo y contraseña");
       return;
     }
-    try{
+
+    try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       const userDoc = await getDoc(doc(db, "users", user.uid));
 
-      if(userDoc.exists()){
+      if (userDoc.exists()) {
         const userData = userDoc.data();
         const userRole = userData.role;
 
-        switch(userRole){
+        switch (userRole) {
           case 'admin':
             navigation.replace("AdminDashboard");
             break;
@@ -32,111 +35,170 @@ export default function LoginScreen({ navigation }: any) {
             break;
           case 'beneficiary':
             navigation.replace("BeneficiaryDashboard");
+            break;
           default:
             Alert.alert("Error", "Rol de usuario no reconocido");
         }
 
-      }else{
+      } else {
         Alert.alert("Error", "Datos de usuario no encontrados");
       }
 
-    }catch (error:any){
-      Alert.alert("Error", error.message);
+    } catch (error: any) {
+      Alert.alert("Correo y/o contraseña incorrectos");
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Iniciar sesión</Text>
+    <ImageBackground
+      source={require('../../assets/background.jpg')}
+      style={styles.container}
+      resizeMode="cover"
+    >
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder='Correo electrónico'
-          keyboardType='email-address'
-          autoCapitalize='none'
-          value={email}
-          onChangeText={setEmail}
+      {/* Logo */}
+      <View style={styles.logoContainer}>
+        <Image 
+          source={require('../../assets/splash_1.png')} 
+          style={styles.logo}
+          resizeMode="contain"
         />
       </View>
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+      {/* Formulario */}
+      <View style={styles.formContainer}>
+        <View style={styles.pinkContainer}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Correo</Text>
+            <TextInput
+              style={styles.input}
+              placeholder=" "
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Contraseña</Text>
+            <TextInput
+              style={styles.input}
+              placeholder=" "
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
+            <Text style={styles.forgotPassword}>¿Olvidaste tu contraseña?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
+            <Text style={styles.signUp}>
+              ¿No tienes cuenta? <Text style={styles.signUpLink}>Regístrate</Text>
+            </Text>
+          </TouchableOpacity>
+
+        </View>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Iniciar sesión</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
-        <Text style={styles.forgotPassword}>¿Olvidaste tu contraseña?</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
-        <Text style={styles.signUp}>
-          ¿No tienes cuenta?{" "}
-          <Text style={styles.signUpLink}>Regístrate</Text>
-        </Text>
-      </TouchableOpacity>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    flex: 0.3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40,
+  },
+  logo: {
+    width: 300,
+    height: 160,
+  },
+  formContainer: {
+    flex: 0.7,
+    width: '100%',
+    paddingHorizontal: 30,
+    justifyContent: 'flex-start',
+  },
+  pinkContainer: {
+    backgroundColor: "#FED7E2",
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
   title: {
-    fontSize: 32,
-    marginBottom: 40,
-    fontWeight: "bold",
-    color: "black",
-  },
-  forgotPassword: {
-    alignSelf: "flex-end",
-    marginBottom: 20,
-    color: "#1E90FF",
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: "#2D3748",
+    textAlign: 'center',
+    marginBottom: 25,
   },
   inputContainer: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#f1f1f1",
-    borderRadius: 8,
-    paddingHorizontal: 10,
     marginBottom: 20,
-    justifyContent: "center",
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: "#2D3748",
+    marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
-    flex: 1,
+    height: 50,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 15,
     fontSize: 16,
+    color: "#2D3748",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   button: {
-    width: "100%",
     height: 50,
-    backgroundColor: "#1E90FF",
+    backgroundColor: "#E53E3E",
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginVertical: 10,
   },
   buttonText: {
     color: "#fff",
     fontSize: 18,
+    fontWeight: '600',
+  },
+  forgotPassword: {
+    textAlign: "center",
+    color: "#E53E3E",
+    fontSize: 14,
+    marginVertical: 10,
   },
   signUp: {
-    color: "#000",
+    textAlign: "center",
+    color: "#2D3748",
+    fontSize: 14,
+    marginTop: 10,
   },
   signUpLink: {
-    color: "#1E90FF",
+    color: "#E53E3E",
+    fontWeight: '600',
   },
 });
