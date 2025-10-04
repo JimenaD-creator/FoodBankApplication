@@ -45,7 +45,7 @@ export default function LoginScreen({ navigation }: any) {
       }
 
     } catch (error: any) {
-      Alert.alert("Correo y/o contraseña incorrectos");
+      Alert.alert("Error: ", error.message);
     }
   }
 
@@ -55,11 +55,12 @@ export default function LoginScreen({ navigation }: any) {
       style={styles.container}
       resizeMode="cover"
     >
-
+     
+      <View style={styles.overlay} />
       {/* Logo */}
       <View style={styles.logoContainer}>
         <Image 
-          source={require('../../assets/splash_1.png')} 
+          source={require('../../assets/logo_no_background.png')} 
           style={styles.logo}
           resizeMode="contain"
         />
@@ -119,6 +120,10 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'flex-start',
     alignItems: 'center',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
   },
   logoContainer: {
     flex: 0.3,

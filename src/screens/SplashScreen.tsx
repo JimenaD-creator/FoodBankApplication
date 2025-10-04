@@ -1,5 +1,5 @@
 import {useEffect} from "react";
-import {View, Text, Image, StyleSheet, ViewBase} from "react-native";
+import {View, Text, Image, StyleSheet, ViewBase, ImageBackground, ActivityIndicator} from "react-native";
 
 export default function SplashScreen({navigation}: any){
     useEffect(() => {
@@ -10,10 +10,25 @@ export default function SplashScreen({navigation}: any){
     }, [navigation]);
 
     return(
+
+      <ImageBackground
+      source={require("../../assets/background.jpg")} 
+      style={styles.container}
+      resizeMode="cover"
+    >
+      {/* Overlay blanco semitransparente */}
+      <View style={styles.overlay} />
+
         <View style={styles.container}>
-            <Image source={require("../../assets/splash_1.png")} style={styles.logo}/>
-            <Text style={styles.text}>Cargando...</Text>
+            <Image source={require("../../assets/logo_no_background.png")} style={styles.logo}/>
+            {/* Spinner de carga */}
+        <ActivityIndicator 
+          size="large" 
+          color="#E53E3E" 
+          style={styles.spinner}
+        />
         </View>
+        </ImageBackground>
     )
 }
 const styles = StyleSheet.create({
@@ -23,15 +38,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
   },
+    overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)', // Fondo blanco semitransparente
+  },
   logo: {
     width: 200,
     height: 200,
-    resizeMode: "contain",
-    marginBottom: 20,
   },
-  text: {
-    fontSize: 18,
-    color: "#333",
+  spinner: {
+    marginTop: 20,
   },
 
 })

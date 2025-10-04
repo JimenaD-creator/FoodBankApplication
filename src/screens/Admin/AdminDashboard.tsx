@@ -27,7 +27,7 @@ export default function AdminDashboard({ navigation }: any) {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Image 
-              source={require('../../../assets/splash_1.png')} 
+              source={require('../../../assets/logo_no_background.png')} 
               style={styles.headerLogo}
               resizeMode="contain"
             />
@@ -83,61 +83,51 @@ export default function AdminDashboard({ navigation }: any) {
               <Text style={styles.cardLabel}>Staff activo</Text>
             </View>
 
-            <View style={[styles.card, styles.communitiesCard]}>
+           <TouchableOpacity
+           style={[styles.card, styles.communitiesCard]}
+              onPress={() => navigation.navigate("CommunitiesManagement")}
+           >
               <View style={styles.cardIcon}>
                 <Ionicons name="location" size={32} color="#E53E3E" />
               </View>
               <Text style={styles.cardValue}>{communitiesCount}</Text>
               <Text style={styles.cardLabel}>Comunidades</Text>
-            </View>
-          </View>
-
-          <Text style={styles.sectionTitle}>🔔 Últimas actualizaciones</Text>
-          
-          <View style={styles.updatesContainer}>
-            <View style={[styles.updateCard, styles.successUpdate]}>
-              <View style={styles.updateIcon}>
-                <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-              </View>
-              <View style={styles.updateContent}>
-                <Text style={styles.updateText}>Se entregaron 30 despensas en Zapopan</Text>
-                <Text style={styles.updateTime}>Hace 2 horas</Text>
-              </View>
-            </View>
             
-            <View style={[styles.updateCard, styles.infoUpdate]}>
-              <View style={styles.updateIcon}>
-                <Ionicons name="location-outline" size={24} color="#2196F3" />
-              </View>
-              <View style={styles.updateContent}>
-                <Text style={styles.updateText}>Nueva comunidad programada: Tonalá</Text>
-                <Text style={styles.updateTime}>Hace 5 horas</Text>
-              </View>
-            </View>
+            </TouchableOpacity>
           </View>
-
+          
           {/* Acciones rápidas */}
           <Text style={styles.sectionTitle}>⚡ Acciones rápidas</Text>
-          
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.adminRegisterButton]}
-              onPress={() => navigation.navigate("Registrar", { userType: "admin", isFromAdminDashboard: true })}
-            >
-              <Ionicons name="person-add" size={24} color="#fff" />
-              <Text style={styles.actionButtonText}>Registrar Admin</Text>
-            </TouchableOpacity>
 
-            {/*<TouchableOpacity
-              style={[styles.actionButton, styles.staffRegisterButton]}
-              onPress={() => navigation.navigate("Registrar", { userType: "staff", isFromAdminDashboard: true })}
-            >
-              <Ionicons name="people-outline" size={24} color="#fff" />
-              <Text style={styles.actionButtonText}>Registrar Staff</Text>
-            </TouchableOpacity>*/}
-          </View>
-        </ScrollView>
-      </View>
+          <View style={styles.quickActionContainer}>
+
+        <TouchableOpacity
+          style={[styles.quickActionButton, { backgroundColor: '#2196F3' }]}
+          onPress={() => navigation.navigate("StandardTemplate")}
+        >
+          
+          <Ionicons name="cube" size={28} color="#fff" />
+          <Text style={styles.quickActionText}>Gestionar Despensa</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionButton, { backgroundColor: '#FF9800' }]}
+          onPress={() => navigation.navigate("DeliveryManagement")}
+        >
+            <Ionicons name="calendar" size={28} color="#fff" />
+          <Text style={styles.quickActionText}>Programar Entregas</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionButton, { backgroundColor: '#E53E3E' }]}
+          onPress={() => navigation.navigate("Registrar", { userType: "admin", isFromAdminDashboard: true })}
+        >
+            <Ionicons name="person-add" size={28} color="#fff" />
+          <Text style={styles.quickActionText}>Registrar</Text>
+        </TouchableOpacity>
+      </View>         
+    </ScrollView>
+  </View>
   );
 }
 
@@ -223,7 +213,7 @@ const styles = StyleSheet.create({
   card: {
     width: "48%",
     borderRadius: 16,
-    padding: 20,
+    padding: 10,
     alignItems: "center",
     marginBottom: 15,
     elevation: 4,
@@ -328,7 +318,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     shadowColor: "#000",
     shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowRadius: 3,
   },
   adminRegisterButton: {
     backgroundColor: "#E53E3E",
@@ -342,4 +332,34 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 8,
   },
+  quickActionContainer: {
+    gap: 12,
+    marginBottom: 20,
+
+  },
+  quickActionButton: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  paddingVertical: 16,
+  paddingHorizontal: 20,
+  borderRadius: 12,
+  gap: 10,
+},
+quickActionText: {
+  color: "#ffffff",
+  fontSize: 15,
+  fontWeight: "600",
+},
+quickActionTitle: {
+  fontSize: 16,
+  fontWeight: "bold",
+  color: "#2D3748",
+  marginBottom: 4,
+},
+quickActionSubtitle: {
+  fontSize: 12,
+  color: "#718096",
+  textAlign: "center",
+},
 });

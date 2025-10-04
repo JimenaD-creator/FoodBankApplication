@@ -105,7 +105,7 @@ export default function ProfileScreen({ navigation }: any){
                         <Ionicons name="arrow-back" size={24} color="#E53E3E" />
                     </TouchableOpacity>
                     <Image 
-                        source={require('../../assets/splash_1.png')} 
+                        source={require('../../assets/logo_no_background.png')} 
                         style={styles.headerLogo}
                         resizeMode="contain"
                     />
