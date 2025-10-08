@@ -66,6 +66,14 @@ export default function DeliveryManagementScreen({ navigation }: any) {
       Alert.alert("Error", "Debes asignar al menos un voluntario");
       return;
     }
+    if (!standardTemplate || Object.keys(standardTemplate).length === 0) {
+    Alert.alert("Error", "No se ha cargado la plantilla estándar. Intenta de nuevo.");
+    console.log("standardTemplate es null o vacío:", standardTemplate);
+    return;
+  }
+
+  console.log("Guardando con productos:", standardTemplate);
+  console.log("Número de productos:", Object.keys(standardTemplate).length);
 
     try {
       const selectedCommunityData = communities.find(c => c.id === selectedCommunity);

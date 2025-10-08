@@ -36,11 +36,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
     overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)', // Fondo blanco semitransparente
+    backgroundColor: 'rgba(255, 255, 255, 0.35)', // Fondo blanco semitransparente
   },
   logo: {
     width: 200,

@@ -1,6 +1,6 @@
 import React from "react";
 import {useEffect, useState} from 'react';
-import {View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, ImageBackground} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, ImageBackground, Alert} from 'react-native';
 import {auth, db} from './firebaseconfig';
 import {doc, getDoc, updateDoc} from 'firebase/firestore';
 import { Ionicons } from "@expo/vector-icons";
@@ -68,12 +68,33 @@ export default function ProfileScreen({ navigation }: any){
     }
 
     const handleLogout = async () => {
-        try {
-            await auth.signOut();
-        } catch (error) {
-            console.log("Error al cerrar sesión: ", error);
-        }
-    }
+    Alert.alert(
+        "Cerrar sesión",
+        "¿Estás seguro de que deseas salir?",
+        [
+            {
+                text: "Cancelar",
+                style: "cancel"
+            },
+            {
+                text: "Cerrar sesión",
+                style: "destructive",
+                onPress: async () => {
+                    try {
+                        await auth.signOut();
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Login' }],
+                        });
+                    } catch (error) {
+                        console.log("Error al cerrar sesión: ", error);
+                        Alert.alert("Error", "No se pudo cerrar sesión");
+                    }
+                }
+            }
+        ]
+    );
+}
 
     if(loading){
         return(
@@ -201,17 +222,6 @@ export default function ProfileScreen({ navigation }: any){
                     style={styles.footerLogo}
                     resizeMode="contain"
                 />
-                <View style={styles.socialIcons}>
-                    <TouchableOpacity style={styles.socialIcon}>
-                        <Ionicons name="globe-outline" size={20} color="#718096" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIcon}>
-                        <Ionicons name="logo-facebook" size={20} color="#718096" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIcon}>
-                        <Ionicons name="logo-instagram" size={20} color="#718096" />
-                    </TouchableOpacity>
-                </View>
             </View>
         </View>
     )

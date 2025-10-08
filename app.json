@@ -1,40 +1,14 @@
 {
   "expo": {
-    "name": " ",
+    "name": "",
     "slug": "FoodBankApplication",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo_no_background.png",
-    "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/logo_no_background.png",
-      "resizeMode": "contain",
+      "image": "./assets/splash-full.png",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
-    },
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/splash-full.png",
-        "backgroundColor": "#ffffff"
-      },
-      "splash": {
-        "image": "./assets/splash-full.png",
-        "resizeMode": "cover",
-        "backgroundColor": "#ffffff",
-        "mdpi": "./assets/logo_no_background.png",
-        "hdpi": "./assets/logo_no_background.png",
-        "xhdpi": "./assets/logo_no_background.png",
-        "xxhdpi": "./assets/logo_no_background.png",
-        "xxxhdpi": "./assets/logo_no_background.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     }
   }
 }
