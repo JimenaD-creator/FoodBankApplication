@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { auth, db } from "./firebaseconfig";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc, collection, getDocs } from "firebase/firestore";
+import { saveSecureData } from "../services/secureStorage";
+
 
 export default function RegisterScreen({ route, navigation }: any) {
   const { userType, isFromAdminDashboard } = route.params || {}; 
@@ -144,6 +146,8 @@ export default function RegisterScreen({ route, navigation }: any) {
       }
 
       Alert.alert("Éxito", "Usuario registrado correctamente");
+      await saveSecureData("user_uid", user.uid);
+      await saveSecureData("user_role", userType);
       navigation.navigate("Login");
     } catch (error: any) {
       Alert.alert("Error", error.message);

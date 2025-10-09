@@ -4,6 +4,7 @@ import {View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, 
 import {auth, db} from './firebaseconfig';
 import {doc, getDoc, updateDoc} from 'firebase/firestore';
 import { Ionicons } from "@expo/vector-icons";
+import { deleteSecureData } from "../services/secureStorage";
 
 export default function ProfileScreen({ navigation }: any){
     const [userData, setUserData] = useState({
@@ -86,6 +87,8 @@ export default function ProfileScreen({ navigation }: any){
                             index: 0,
                             routes: [{ name: 'Login' }],
                         });
+                        await deleteSecureData("user_uid");
+                        await deleteSecureData("user_role");
                     } catch (error) {
                         console.log("Error al cerrar sesión: ", error);
                         Alert.alert("Error", "No se pudo cerrar sesión");

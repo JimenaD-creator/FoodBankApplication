@@ -9,6 +9,9 @@
       "image": "./assets/splash-full.png",
       "resizeMode": "cover",
       "backgroundColor": "#ffffff"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

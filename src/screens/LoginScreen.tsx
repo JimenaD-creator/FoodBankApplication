@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ImageBackground } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { auth, db } from './firebaseconfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { getDoc, doc } from 'firebase/firestore';
-import { CloudinaryImage } from '@cloudinary/url-gen/assets/CloudinaryImage';
-import { backgroundRemoval } from '@cloudinary/url-gen/actions/effect';
+import { getSecureData } from '../services/secureStorage';
+
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -47,6 +47,16 @@ export default function LoginScreen({ navigation }: any) {
     } catch (error: any) {
       Alert.alert("Error: ", error.message);
     }
+    useEffect(() => {
+  const loadUser = async () => {
+    const uid = await getSecureData("user_uid");
+    const role = await getSecureData("user_role");
+    if (uid) {
+      console.log("Usuario autenticado:", uid, "Rol:", role);
+    }
+  }
+  loadUser();
+}, [])
   }
 
   return (

@@ -11,11 +11,15 @@ import ProfileScreen from './src/screens/InfoProfile';
 import StandardTemplateScreen from './src/screens/Admin/StandardTemplate';
 import CommunitiesManagementScreen from './src/screens/Admin/CommunitiesManagement';
 import DeliveryManagementScreen from './src/screens/Admin/DeliveryManagement';
-import DeliveryDetails from './src/screens/Beneficiary/DeliveryDetails';
+import DeliveryDetails from './src/screens/DeliveryDetails';
 import DeliveryQR from './src/screens/Beneficiary/DeliveryQR';
+import StaffDashboard from './src/screens/Volunteer/StaffDashboard';
+import PreStudyForm from './src/screens/Beneficiary/PreStudyForm';
+import SocioEconomicSurvey from './src/screens/Volunteer/SocioEconomicSurvey';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import SplashScreen from './src/screens/SplashScreen';
 import { useEffect } from 'react'; 
+import DeliveryHistoryScreen from './src/screens/DeliveryHistory';
 
 ExpoSplashScreen.preventAutoHideAsync();
 
@@ -45,11 +49,11 @@ export default function App() {
         <Stack.Screen name="DeliveryQR" component={DeliveryQR}/>
         <Stack.Screen name="BeneficiaryDashboard" component={BeneficiaryDashboard}/>
         <Stack.Screen name="DeliveryDetails" component={DeliveryDetails}/>
+        <Stack.Screen name="DeliveryHistory" component={DeliveryHistoryScreen}/>
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-
-
-
-
+        <Stack.Screen name="StaffDashboard" component={StaffDashboard}/>
+        <Stack.Screen name="PreStudyForm" component={PreStudyForm}/>
+        <Stack.Screen name="SocioEconomicSurvey" component={SocioEconomicSurvey}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

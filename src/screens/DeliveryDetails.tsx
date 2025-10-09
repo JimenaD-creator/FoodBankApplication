@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebaseconfig";
+import { db } from "./firebaseconfig";
 
 const PRODUCT_CATEGORIES = [
   { id: "canasta_basica", name: "Canasta básica", color: "#FFE8CC" },

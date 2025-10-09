@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, 
 import { Ionicons } from "@expo/vector-icons";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseconfig";
+import { saveSecureData } from "../../services/secureStorage";
 
 const FOOD_FREQUENCY = ["Siempre", "A veces", "Rara vez", "Nunca"];
 const INCOME_RANGES = ["Menos de $3,000", "$3,000 - $6,000", "$6,000 - $10,000", "Más de $10,000"];
@@ -17,7 +18,7 @@ const HEALTH_CONDITIONS = [
   "Ninguna"
 ];
 
-export default function SocioNutritionalFormScreen({ navigation }: any) {
+export default function PreStudyForm({ navigation }: any) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Información del hogar
@@ -65,7 +66,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
       }
 
       // Guardar formulario
-      await addDoc(collection(db, "socioNutritionalForms"), {
+      await addDoc(collection(db, "pre_socioNutritionalForms"), {
         userId: user.uid,
         ...formData,
         submittedAt: new Date(),
@@ -375,7 +376,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Header */}
       <ImageBackground 
-        source={require('../../assets/background.png')}
+        source={require('../../../assets/background.jpg')}
         style={styles.headerBackground}
         resizeMode="cover"
       >

@@ -234,8 +234,15 @@ export default function BeneficiaryDashboard({ navigation }: any) {
                 </TouchableOpacity>
               )}
             </View>
+            
           ))
         )}
+        <TouchableOpacity
+          style={[styles.button]}
+          onPress={() => navigation.navigate("PreStudyForm")}
+        >
+          <Text style={styles.button}>Realizar estudio inicial</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -295,4 +302,12 @@ const styles = StyleSheet.create({
   },
   statusBadge: { alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginBottom: 8 },
   statusText: { fontSize: 12, fontWeight: "600", color: "#fff" },
+  button: {backgroundColor: "#FF6B6B",
+            paddingVertical: 10,
+            borderRadius: 12,
+            alignItems: "center",
+            textDecorationColor: "#fff",
+            color: "#fff",
+            fontSize: 18
+          }
 });
