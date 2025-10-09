@@ -9,6 +9,8 @@ import AdminDashboard from './src/screens/Admin/AdminDashboard';
 import BeneficiariesList from './src/screens/Admin/BeneficiariesList';
 import ProfileScreen from './src/screens/InfoProfile';
 
+import StaffDashboard from './src/screens/Staff/StaffDashboard';
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -23,6 +25,8 @@ export default function App() {
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
         <Stack.Screen name="BeneficiariesList" component={BeneficiariesList} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+
+        <Stack.Screen name="StaffDashboard" component = {StaffDashboard} />
 
 
       </Stack.Navigator>
