@@ -8,11 +8,12 @@ export default function UserTypeScreen({ navigation }: any) {
       style={styles.backgroundImage}
       resizeMode="cover"
     >
+       <View style={styles.overlay} />
       <View style={styles.container}>
         {/* Logo Container */}
         <View style={styles.logoContainer}>
           <Image 
-            source={require('../../assets/splash_1.png')} 
+            source={require('../../assets/logo_no_background.png')} 
             style={styles.logo}
             resizeMode="contain"
           />
@@ -61,6 +62,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingHorizontal: 20,
   },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
   logoContainer: {
     flex: 0.4,
     justifyContent: 'center',
@@ -68,8 +73,8 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   logo: {
-    width: 280,
-    height: 140,
+    width: 300,
+    height: 160,
     marginBottom: 10,
   },
   selectionContainer: {

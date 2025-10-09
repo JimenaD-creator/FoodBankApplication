@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { auth, db } from "./firebaseconfig";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc, collection, getDocs } from "firebase/firestore";
+import { saveSecureData } from "../services/secureStorage";
+
 
 export default function RegisterScreen({ route, navigation }: any) {
   const { userType, isFromAdminDashboard } = route.params || {}; 
@@ -144,6 +146,8 @@ export default function RegisterScreen({ route, navigation }: any) {
       }
 
       Alert.alert("Éxito", "Usuario registrado correctamente");
+      await saveSecureData("user_uid", user.uid);
+      await saveSecureData("user_role", userType);
       navigation.navigate("Login");
     } catch (error: any) {
       Alert.alert("Error", error.message);
@@ -170,12 +174,14 @@ export default function RegisterScreen({ route, navigation }: any) {
       style={styles.backgroundImage}
       resizeMode="cover"
     >
+      
+      <View style={styles.overlay} />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
           {/* Logo Container */}
           <View style={styles.logoContainer}>
             <Image 
-              source={require('../../assets/splash_1.png')} 
+              source={require('../../assets/logo_no_background.png')} 
               style={styles.logo}
               resizeMode="contain"
             />
@@ -296,6 +302,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
   scrollContainer: {
     flexGrow: 1,
   },
@@ -309,8 +319,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 200,
-    height: 80,
+    width: 260,
+    height: 140,
   },
   loadingText: {
     fontSize: 18,
@@ -353,7 +363,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   userTypeButton: {
-    backgroundColor: "#4CAF50", // Verde más oscuro
+    backgroundColor: "#4CAF50", 
     borderRadius: 20,
     paddingVertical: 12,
     paddingHorizontal: 20,
