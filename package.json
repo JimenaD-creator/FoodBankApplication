@@ -14,14 +14,33 @@
     "@react-navigation/native-stack": "^7.3.26",
     "autoprefixer": "^10.4.21",
     "expo": "~54.0.7",
+<<<<<<< Updated upstream
+=======
+    "expo-barcode-scanner": "^13.0.1",
+    "expo-camera": "^17.0.8",
+    "expo-secure-store": "~15.0.7",
+    "expo-splash-screen": "~31.0.10",
+>>>>>>> Stashed changes
     "expo-status-bar": "~3.0.8",
     "firebase": "^12.2.1",
     "nativewind": "^4.2.0",
     "postcss": "^8.5.6",
     "react": "19.1.0",
     "react-native": "0.81.4",
+<<<<<<< Updated upstream
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+=======
+    "react-native-background-remover": "^0.3.2",
+    "react-native-camera": "^4.2.1",
+    "react-native-encrypted-storage": "^4.0.3",
+    "react-native-qr-svg": "^1.5.0",
+    "react-native-qrcode-svg": "^6.3.15",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-vision-camera": "^4.7.2",
+    "react-native-web": "^0.21.0",
+>>>>>>> Stashed changes
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
