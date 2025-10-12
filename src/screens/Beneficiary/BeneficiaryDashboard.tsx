@@ -1,136 +1,139 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, RefreshControl } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { collection, query, where, getDocs, orderBy, onSnapshot } from "firebase/firestore";
-import { auth, db } from "../firebaseconfig";
+"use client"
+
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, RefreshControl } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { collection, query, where, getDocs, orderBy, onSnapshot } from "firebase/firestore"
+import { auth, db } from "../firebaseconfig"
+import { hasAcceptedPrivacyPolicy } from "../../services/privacyService"
 
 interface Delivery {
-  id: string;
-  communityName: string;
-  municipio: string;
-  deliveryDate: any;
-  volunteers: { id: string; name: string }[];
-  products: any;
-  status: "Programada" | "En camino" | "Completada";
+  id: string
+  communityName: string
+  municipio: string
+  deliveryDate: any
+  volunteers: { id: string; name: string }[]
+  products: any
+  status: "Programada" | "En camino" | "Completada"
 }
 
 export default function BeneficiaryDashboard({ navigation }: any) {
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-  const [userCommunity, setUserCommunity] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [userName, setUserName] = useState<string>("");
+  const [deliveries, setDeliveries] = useState<Delivery[]>([])
+  const [userCommunity, setUserCommunity] = useState<string>("")
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [userName, setUserName] = useState<string>("")
+
+  
 
   useEffect(() => {
-    let unsubscribe: any;
+    let unsubscribe: any
 
     const init = async () => {
-      unsubscribe = await loadUserData();
-    };
+      unsubscribe = await loadUserData()
+    }
 
-    init();
+    init()
 
     return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
+      if (unsubscribe) unsubscribe()
+    }
+  }, [])
 
   const loadUserData = async () => {
     try {
-      const user = auth.currentUser;
-      if (!user) return;
+      const user = auth.currentUser
+      if (!user) return
 
-      setUserName(user.displayName || "Beneficiario");
+      setUserName(user.displayName || "Beneficiario")
 
       // Obtener comunidad del usuario
-      const userDoc = await getDocs(
-        query(collection(db, "users"), where("__name__", "==", user.uid))
-      );
+      const userDoc = await getDocs(query(collection(db, "users"), where("__name__", "==", user.uid)))
 
       if (!userDoc.empty) {
-        const userData = userDoc.docs[0].data();
-        const community = userData.community;
-        setUserCommunity(community);
+        const userData = userDoc.docs[0].data()
+        const community = userData.community
+        setUserCommunity(community)
 
-        const unsubscribe = loadDeliveries(community);
-        return unsubscribe;
+        const unsubscribe = loadDeliveries(community)
+        return unsubscribe
       }
     } catch (error) {
-      console.error("Error cargando datos:", error);
+      console.error("Error cargando datos:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const loadDeliveries = (community: string) => {
     const q = query(
       collection(db, "scheduledDeliveries"),
       where("communityName", "==", community),
-      orderBy("deliveryDate", "asc")
-    );
+      orderBy("deliveryDate", "asc"),
+    )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const now = new Date();
+      const now = new Date()
       const deliveriesList: Delivery[] = snapshot.docs
         .map((doc) => ({
           id: doc.id,
           ...(doc.data() as Omit<Delivery, "id">),
         }))
-        .filter((d) => d.deliveryDate.toDate() >= now);
+        .filter((d) => d.deliveryDate.toDate() >= now)
 
-      setDeliveries(deliveriesList);
-    });
+      setDeliveries(deliveriesList)
+    })
 
-    return unsubscribe;
-  };
+    return unsubscribe
+  }
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await loadUserData();
-    setRefreshing(false);
-  };
+    setRefreshing(true)
+    await loadUserData()
+    setRefreshing(false)
+  }
 
   const formatDate = (timestamp: any) => {
-    const date = timestamp.toDate();
+    const date = timestamp.toDate()
     return date.toLocaleDateString("es-MX", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-    });
-  };
+    })
+  }
 
   const formatTime = (timestamp: any) => {
-    const date = timestamp.toDate();
+    const date = timestamp.toDate()
     return date.toLocaleTimeString("es-MX", {
       hour: "2-digit",
       minute: "2-digit",
-    });
-  };
+    })
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Programada":
-        return "#2196F3";
+        return "#2196F3"
       case "En camino":
-        return "#FF9800";
+        return "#FF9800"
       case "Completada":
-        return "#4CAF50";
+        return "#4CAF50"
       default:
-        return "#718096";
+        return "#718096"
     }
-  };
+  }
 
   if (loading) {
     return (
       <View style={styles.container}>
         <Text style={styles.loadingText}>Cargando...</Text>
       </View>
-    );
+    )
   }
 
   // Próxima entrega
-  const nextDelivery = deliveries[0];
+  const nextDelivery = deliveries[0]
 
   return (
     <View style={styles.container}>
@@ -145,10 +148,7 @@ export default function BeneficiaryDashboard({ navigation }: any) {
             <Ionicons name="home" size={28} color="#4CAF50" />
             <Text style={styles.title}>Mis Entregas</Text>
           </View>
-          <TouchableOpacity
-            style={styles.avatarContainer}
-            onPress={() => navigation.navigate("ProfileScreen")}
-          >
+          <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate("ProfileScreen")}>
             <Ionicons name="person-circle" size={40} color="#E53E3E" />
           </TouchableOpacity>
         </View>
@@ -177,10 +177,10 @@ export default function BeneficiaryDashboard({ navigation }: any) {
               <Text style={styles.statusText}>{nextDelivery.status}</Text>
             </View>
 
-            <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>
-              Próxima entrega
+            <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>Próxima entrega</Text>
+            <Text>
+              {nextDelivery.communityName}, {nextDelivery.municipio}
             </Text>
-            <Text>{nextDelivery.communityName}, {nextDelivery.municipio}</Text>
             <Text>
               {formatDate(nextDelivery.deliveryDate)} | {formatTime(nextDelivery.deliveryDate)}
             </Text>
@@ -210,10 +210,7 @@ export default function BeneficiaryDashboard({ navigation }: any) {
           </View>
         ) : (
           deliveries.slice(1).map((delivery) => (
-            <View
-              key={delivery.id}
-              style={[styles.deliveryCard, { borderLeftColor: getStatusColor(delivery.status) }]}
-            >
+            <View key={delivery.id} style={[styles.deliveryCard, { borderLeftColor: getStatusColor(delivery.status) }]}>
               <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
                 <Text style={styles.statusText}>{delivery.status}</Text>
               </View>
@@ -228,24 +225,18 @@ export default function BeneficiaryDashboard({ navigation }: any) {
                   style={{ marginTop: 8 }}
                   onPress={() => navigation.navigate("DeliveryDetails", { delivery })}
                 >
-                  <Text style={{ color: "#2196F3", fontWeight: "600" }}>
-                    Ver contenido de la despensa
-                  </Text>
+                  <Text style={{ color: "#2196F3", fontWeight: "600" }}>Ver contenido de la despensa</Text>
                 </TouchableOpacity>
               )}
             </View>
-            
           ))
         )}
-        <TouchableOpacity
-          style={[styles.button]}
-          onPress={() => navigation.navigate("PreStudyForm")}
-        >
+        <TouchableOpacity style={[styles.button]} onPress={() => navigation.navigate("PreStudyForm")}>
           <Text style={styles.button}>Realizar estudio inicial</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -283,7 +274,13 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 20 },
   sectionHeader: { flexDirection: "row", alignItems: "center", marginTop: 24, marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#2D3748" },
-  countBadge: { backgroundColor: "#4CAF50", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginLeft: 10 },
+  countBadge: {
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 10,
+  },
   countBadgeText: { fontSize: 12, fontWeight: "bold", color: "#fff" },
   emptyState: { alignItems: "center", paddingVertical: 60, paddingHorizontal: 40 },
   emptyStateTitle: { fontSize: 18, fontWeight: "600", color: "#4A5568", marginTop: 16, textAlign: "center" },
@@ -300,14 +297,21 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: "#4CAF50",
   },
-  statusBadge: { alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginBottom: 8 },
+  statusBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
   statusText: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  button: {backgroundColor: "#FF6B6B",
-            paddingVertical: 10,
-            borderRadius: 12,
-            alignItems: "center",
-            textDecorationColor: "#fff",
-            color: "#fff",
-            fontSize: 18
-          }
-});
+  button: {
+    backgroundColor: "#FF6B6B",
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center",
+    textDecorationColor: "#fff",
+    color: "#fff",
+    fontSize: 18,
+  },
+})

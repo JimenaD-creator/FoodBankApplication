@@ -1,10 +1,9 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ImageBackground } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { auth, db } from './firebaseconfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { getDoc, doc } from 'firebase/firestore';
-import { getSecureData } from '../services/secureStorage';
-
+import { hasAcceptedPrivacyPolicy } from '../services/privacyService';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -17,47 +16,51 @@ export default function LoginScreen({ navigation }: any) {
     }
 
     try {
+      // Autenticar usuario
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Obtener datos del usuario
       const userDoc = await getDoc(doc(db, "users", user.uid));
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const userRole = userData.role;
-
-        switch (userRole) {
-          case 'admin':
-            navigation.replace("AdminDashboard");
-            break;
-          case 'staff':
-            navigation.replace("StaffDashboard");
-            break;
-          case 'beneficiary':
-            navigation.replace("BeneficiaryDashboard");
-            break;
-          default:
-            Alert.alert("Error", "Rol de usuario no reconocido");
-        }
-
-      } else {
+      if (!userDoc.exists()) {
         Alert.alert("Error", "Datos de usuario no encontrados");
+        return;
+      }
+
+      const userData = userDoc.data();
+      const userRole = userData.role;
+
+      switch (userRole) {
+        case 'admin':
+          navigation.replace("AdminDashboard");
+          break;
+
+        case 'staff':
+          navigation.replace("StaffDashboard");
+          break;
+
+        case 'beneficiary':
+          // Revisar si aceptó la política de privacidad usando UID
+          const accepted = await hasAcceptedPrivacyPolicy(user.uid);
+          if (accepted) {
+            navigation.replace("BeneficiaryDashboard");
+          } else {
+            navigation.replace("PrivacyPolicyScreen", {
+              uid: user.uid, // pasamos UID
+              onAccept: () => navigation.replace("BeneficiaryDashboard")
+            });
+          }
+          break;
+
+        default:
+          Alert.alert("Error", "Rol de usuario no reconocido");
       }
 
     } catch (error: any) {
       Alert.alert("Error: ", error.message);
     }
-    useEffect(() => {
-  const loadUser = async () => {
-    const uid = await getSecureData("user_uid");
-    const role = await getSecureData("user_role");
-    if (uid) {
-      console.log("Usuario autenticado:", uid, "Rol:", role);
-    }
-  }
-  loadUser();
-}, [])
-  }
+  };
 
   return (
     <ImageBackground
@@ -65,8 +68,8 @@ export default function LoginScreen({ navigation }: any) {
       style={styles.container}
       resizeMode="cover"
     >
-     
       <View style={styles.overlay} />
+
       {/* Logo */}
       <View style={styles.logoContainer}>
         <Image 
@@ -115,10 +118,8 @@ export default function LoginScreen({ navigation }: any) {
               ¿No tienes cuenta? <Text style={styles.signUpLink}>Regístrate</Text>
             </Text>
           </TouchableOpacity>
-
         </View>
       </View>
-
     </ImageBackground>
   );
 }
@@ -160,13 +161,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 3,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: "#2D3748",
-    textAlign: 'center',
-    marginBottom: 25,
   },
   inputContainer: {
     marginBottom: 20,

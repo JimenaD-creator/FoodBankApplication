@@ -1,10 +1,15 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import QRCode from "react-native-qrcode-svg";
+import { useSecureScreen } from '../../hooks/useSecureScreen'
 
 export default function DeliveryQR({ route }: any) {
   const { delivery } = route.params;
-
+  
+  useSecureScreen({
+    showAlert: true,
+    alertMessage: 'Las capturas de pantalla están deshabilitadas por seguridad.'
+  });
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Código QR de la entrega</Text>

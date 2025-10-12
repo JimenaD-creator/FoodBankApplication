@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSecureScreen } from '../../hooks/useSecureScreen'
 
 export default function AdminDashboard({ navigation }: any) {
   const [deliveriesCount, setDeliveriesCount] = useState(0);
@@ -20,6 +21,11 @@ export default function AdminDashboard({ navigation }: any) {
     return() => clearInterval(interval);
     
   }, [])
+
+  useSecureScreen({
+      showAlert: true,
+      alertMessage: 'Las capturas de pantalla están deshabilitadas por seguridad.'
+    });
   
   return (
       <View style={styles.container}>
