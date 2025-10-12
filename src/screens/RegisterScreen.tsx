@@ -1,8 +1,10 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ImageBackground, ScrollView } from "react-native";
 import { useState, useEffect } from "react";
 import { auth, db } from "./firebaseconfig";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc, collection, getDocs } from "firebase/firestore";
+import { saveSecureData } from "../services/secureStorage";
+
 
 export default function RegisterScreen({ route, navigation }: any) {
   const { userType, isFromAdminDashboard } = route.params || {}; 
@@ -21,6 +23,34 @@ export default function RegisterScreen({ route, navigation }: any) {
   // Estados para manejo de admins
   const [isFirstAdmin, setIsFirstAdmin] = useState(false);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
+  const getThemeColors = () => {
+    switch (userType) {
+      case 'admin':
+        return {
+          containerBg: 'rgba(255, 204, 204, 0.95)', // Rosa claro para admin
+          buttonBg: '#E53E3E',                       // Rojo para admin
+          buttonText: 'Soy administrador',
+          linkColor: '#E53E3E'
+        };
+      case 'staff':
+        return {
+          containerBg: 'rgba(255, 235, 153, 0.95)', // Amarillo claro para staff
+          buttonBg: '#F59E0B',                       // Naranja para staff
+          buttonText: 'Soy voluntario',
+          linkColor: '#F59E0B'
+        };
+      case 'beneficiary':
+      default:
+        return {
+          containerBg: 'rgba(196, 226, 196, 0.95)', // Verde claro para beneficiario
+          buttonBg: '#4CAF50',                       // Verde para beneficiario
+          buttonText: 'Soy beneficiario',
+          linkColor: '#4CAF50'
+        };
+    }
+  };
+
+  const themeColors = getThemeColors();
 
   // Verificar si ya existe algún admin
   useEffect(() => {
@@ -116,6 +146,8 @@ export default function RegisterScreen({ route, navigation }: any) {
       }
 
       Alert.alert("Éxito", "Usuario registrado correctamente");
+      await saveSecureData("user_uid", user.uid);
+      await saveSecureData("user_role", userType);
       navigation.navigate("Login");
     } catch (error: any) {
       Alert.alert("Error", error.message);
@@ -124,108 +156,281 @@ export default function RegisterScreen({ route, navigation }: any) {
 
   if (loadingAdmins) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Cargando...</Text>
-      </View>
+      <ImageBackground 
+        source={require('../../assets/background.jpg')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      >
+        <View style={styles.container}>
+          <Text style={styles.loadingText}>Cargando...</Text>
+        </View>
+      </ImageBackground>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        {userType === "admin"
-        ? "Registro Administrador"
-        : userType === "staff"
-        ? "Registro Staff"
-        : userType === "beneficiary"
-        ? "Registro Beneficiario"
-        : "Registro Usuario"
-         }
-      </Text>
-
-      {/* Campos básicos */}
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre completo"
-        value={fullName}
-        onChangeText={setFullName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Correo electrónico"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Teléfono"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setPhone}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirmar contraseña"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
+    <ImageBackground 
+      source={require('../../assets/background.jpg')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
       
+      <View style={styles.overlay} />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          {/* Logo Container */}
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/logo_no_background.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
 
+          {/* Form Container */}
+          <View style={styles.formContainer}>
+            <View style={[styles.containerBox, { backgroundColor: themeColors.containerBg }]}>
+              {/* Botón indicador de tipo de usuario */}
+              <TouchableOpacity style={[styles.userTypeButton, { backgroundColor: themeColors.buttonBg }]}>
+                <Text style={styles.userTypeButtonText}>
+                  {userType === "admin"
+                    ? "Soy administrador"
+                    : userType === "staff"
+                    ? "Soy trabajador"
+                    : userType === "beneficiary"
+                    ? "Soy beneficiario"
+                    : "Soy usuario"}
+                </Text>
+              </TouchableOpacity>
 
-      {/* Campos adicionales según rol */}
-      {(userType === "staff" || userType === "beneficiary") && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Comunidad"
-            value={community}
-            onChangeText={setCommunity}
-          />
-        </>
-      )}
+              {/* Campos básicos */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Nombre completo</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder=""
+                  value={fullName}
+                  onChangeText={setFullName}
+                />
+              </View>
 
-      {userType === "beneficiary" && (
-        <TextInput
-          style={styles.input}
-          placeholder="Tamaño de familia"
-          keyboardType="numeric"
-          value={familySize}
-          onChangeText={setFamilySize}
-        />
-      )}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Correo electrónico</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder=""
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Registrarse</Text>
-      </TouchableOpacity>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Teléfono</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder=""
+                  keyboardType="phone-pad"
+                  value={phone}
+                  onChangeText={setPhone}
+                />
+              </View>
 
-     {userType == "admin" && (
-      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={styles.signUp}>
-          ¿Ya tienes cuenta?{" "}
-          <Text style={styles.signUpLink}>Inicia sesión</Text>
-        </Text>
-      </TouchableOpacity>
-    )}
-    </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Contraseña</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder=""
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Confirmar contraseña</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder=""
+                  secureTextEntry
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                />
+              </View>
+
+              {/* Campos adicionales según rol */}
+              {(userType === "staff" || userType === "beneficiary") && (
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Comunidad</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder=""
+                    value={community}
+                    onChangeText={setCommunity}
+                  />
+                </View>
+              )}
+
+              {userType === "beneficiary" && (
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Tamaño de familia</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder=""
+                    keyboardType="numeric"
+                    value={familySize}
+                    onChangeText={setFamilySize}
+                  />
+                </View>
+              )}
+
+              <TouchableOpacity style={[styles.button, { backgroundColor: themeColors.buttonBg }]} onPress={handleRegister}>
+                <Text style={styles.buttonText}>Registrarse</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff", paddingHorizontal: 20 },
-  title: { fontSize: 28, marginBottom: 30, fontWeight: "bold", color: "black" },
-  input: { width: "100%", height: 50, backgroundColor: "#f1f1f1", borderRadius: 8, paddingHorizontal: 10, marginBottom: 15 },
-  button: { width: "100%", height: 50, backgroundColor: "#1E90FF", borderRadius: 8, justifyContent: "center", alignItems: "center", marginBottom: 20 },
-  buttonText: { color: "#fff", fontSize: 18 },
-  signUp: { color: "#000" },
-  signUpLink: { color: "#1E90FF" },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  logoContainer: {
+    paddingTop: 40,
+    paddingBottom: 20,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 260,
+    height: 140,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#2D3748',
+    textAlign: 'center',
+    marginTop: 50,
+  },
+  formContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  greenContainer: {
+    backgroundColor: "rgba(196, 226, 196, 0.95)", 
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  containerBox: {
+    // Nuevo estilo para el contenedor con colores dinámicos
+    borderRadius: 20,
+    padding: 18,
+    marginHorizontal: 5,
+    marginVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+    maxWidth: '100%',
+  },
+  userTypeButton: {
+    backgroundColor: "#4CAF50", 
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  userTypeButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: 'center',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2D3748",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: "#2D3748",
+    marginBottom: 5,
+    fontWeight: "500",
+  },
+  input: {
+    height: 45,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: "#2D3748",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  button: {
+    height: 50,
+    backgroundColor: "#4CAF50", 
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  signUp: {
+    textAlign: "center",
+    color: "#2D3748",
+    fontSize: 14,
+  },
+  signUpLink: {
+    color: "#4CAF50",
+    fontWeight: "600",
+  },
 });
