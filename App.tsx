@@ -20,6 +20,8 @@ import DeliveryManagementScreen from "./src/screens/Admin/DeliveryManagement"
 import DeliveryDetails from "./src/screens/DeliveryDetails"
 import DeliveryQR from "./src/screens/Beneficiary/DeliveryQR"
 import StaffDashboard from "./src/screens/Volunteer/StaffDashboard"
+import StaffDelivery from "./src/screens/Volunteer/StaffDelivery"
+import ScannerQR from "./src/screens/Volunteer/ScannerQR"
 import PreStudyForm from "./src/screens/Beneficiary/PreStudyForm"
 import SocioEconomicSurvey from "./src/screens/Volunteer/SocioEconomicSurvey"
 import SplashScreen from "./src/screens/SplashScreen"
@@ -81,6 +83,8 @@ function MainApp() {
       <Stack.Screen name="DeliveryHistory" component={DeliveryHistoryScreen} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
       <Stack.Screen name="StaffDashboard" component={StaffDashboard} />
+      <Stack.Screen name="StaffDelivery" component={StaffDelivery} />
+      <Stack.Screen name="ScannerQR" component={ScannerQR} />
       <Stack.Screen name="PreStudyForm" component={PreStudyForm} />
       <Stack.Screen name="SocioEconomicSurvey" component={SocioEconomicSurvey} />
       <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} />
