@@ -1,78 +1,67 @@
-// syncService.ts
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './../screens/firebaseconfig';
+import NetInfo from "@react-native-community/netinfo";
+import { addDoc, collection } from "firebase/firestore";
+import { db, auth } from "../screens/firebaseconfig";
+import { getSecureData, deleteSecureData } from "./secureStorage";
+import { Alert, Platform } from "react-native";
 
 /**
- * Guarda temporalmente una acción local (entrega, registro, etc.)
- * si no hay conexión a internet.
+ * Inicia la escucha para sincronizar borradores cuando vuelve la conexión.
+ * Devuelve la función unsubscribe.
  */
-export const saveOfflineAction = async (actionType: string, payload: any) => {
-  try {
-    const existingQueue = JSON.parse(await AsyncStorage.getItem('offlineQueue') || '[]');
-    existingQueue.push({ actionType, payload, timestamp: Date.now() });
-    await AsyncStorage.setItem('offlineQueue', JSON.stringify(existingQueue));
-    console.log('Acción guardada offline:', actionType);
-  } catch (error) {
-    console.error('Error guardando acción offline:', error);
-  }
-};
+export function startFormSyncListener() {
+  console.log("[SyncService] Iniciando listener de sincronización...");
+  const unsubscribe = NetInfo.addEventListener(async (state) => {
+    console.log(`[SyncService] Cambio conexión: isConnected=${state.isConnected}`);
+    if (state.isConnected) {
+      await trySyncDraft();
+    }
+  });
+
+  // Intentar sincronizar una vez al iniciar
+  trySyncDraft().catch(err => console.log("[SyncService] Error inicial sync:", err));
+  return unsubscribe;
+}
 
 /**
- * Intenta sincronizar las acciones guardadas localmente con Firebase
- * cuando el dispositivo vuelve a tener conexión.
+ * Función para sincronizar borrador de forma segura.
  */
-export const syncOfflineActions = async () => {
+export async function trySyncDraft() {
+  console.log("[SyncService] Intentando sincronizar borrador...");
   try {
-    const connection = await NetInfo.fetch();
-
-    if (!connection.isConnected) {
-      console.log('Sin conexión, no se puede sincronizar aún');
+    const draft = await getSecureData("socioFormDraft");
+    if (!draft) {
+      console.log("[SyncService] ✅ No hay borrador pendiente.");
       return;
     }
 
-    const queueString = await AsyncStorage.getItem('offlineQueue');
-    if (!queueString) return;
-
-    const queue = JSON.parse(queueString);
-
-    for (const item of queue) {
-      switch (item.actionType) {
-        case 'delivery':
-          await addDoc(collection(db, 'deliveriesLog'), {
-            ...item.payload,
-            syncedAt: serverTimestamp(),
-          });
-          break;
-        case 'beneficiary_registration':
-          await addDoc(collection(db, 'beneficiaries'), {
-            ...item.payload,
-            createdAt: serverTimestamp(),
-          });
-          break;
-        default:
-          console.warn('Tipo de acción no reconocido:', item.actionType);
-      }
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn("[SyncService] ⚠️ No hay usuario autenticado. No se puede sincronizar.");
+      return;
     }
 
-    // Limpia la cola una vez sincronizado
-    await AsyncStorage.removeItem('offlineQueue');
-    console.log('✅ Sincronización completada');
+    const formObj = typeof draft === "string" ? JSON.parse(draft) : draft;
+
+    await addDoc(collection(db, "socioNutritionalForms"), {
+      userId: user.uid,
+      ...formObj,
+      submittedAt: new Date(),
+      status: "Pendiente de revisión (auto-sync)"
+    });
+
+    await deleteSecureData("socioFormDraft");
+
+    console.log("[SyncService] ✅ Borrador sincronizado y eliminado localmente.");
+
+    // Mostrar alerta al usuario si la app está en foreground
+    if (Platform.OS !== "web") {
+      Alert.alert(
+        "Sincronización exitosa",
+        "Tu formulario guardado offline se ha sincronizado correctamente."
+      );
+    }
 
   } catch (error) {
-    console.error('Error sincronizando acciones offline:', error);
+    console.error("[SyncService] ❌ Error sincronizando borrador:", error);
   }
-};
-
-/**
- * Escucha automáticamente los cambios de conexión.
- */
-export const startSyncListener = () => {
-  NetInfo.addEventListener(state => {
-    if (state.isConnected) {
-      console.log('📶 Conexión detectada, iniciando sincronización...');
-      syncOfflineActions();
-    }
-  });
-};
+}

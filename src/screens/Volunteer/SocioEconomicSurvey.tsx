@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Alert, TextInput } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 import { auth, db } from "../firebaseconfig";
+import { saveSecureData, getSecureData } from "../../services/secureStorage";
+import NetInfo from "@react-native-community/netinfo";
+import { secureFetch } from "../../services/networkSecurity";
 
 const FOOD_FREQUENCY = ["Siempre", "A veces", "Rara vez", "Nunca"];
 const INCOME_RANGES = ["Menos de $3,000", "$3,000 - $6,000", "$6,000 - $10,000", "Más de $10,000"];
@@ -44,52 +47,133 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     fuentesIngreso: 0,
     gastosAlimentos: 0,
   });
+  const [isConnected, setIsConnected] = useState(true);
+  const [logs, setLogs] = useState<string[]>([]);
 
-  const handleNumberChange = (field: string, increment: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: Math.max(0, prev[field as keyof typeof prev] as number + (increment ? 1 : -1))
-    }));
+  const addLog = (msg: string) => {
+    console.log(msg);
+    setLogs(prev => [msg, ...prev]);
   };
 
+  // ------------------ Conexión ------------------
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsConnected(!!state.isConnected);
+      addLog(`[NetInfo] Conectado: ${state.isConnected}`);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ------------------ Cargar draft ------------------
+  useEffect(() => {
+  (async () => {
+    const stored = await getSecureData("socioFormDraft");
+    if (!stored) {
+      addLog("[Draft] No hay datos guardados todavía en SecureStore.");
+    } else {
+      // Mostrar alerta para que el usuario decida
+      Alert.alert(
+        "Draft encontrado",
+        "Se han encontrado datos guardados. ¿Deseas cargarlos o iniciar uno nuevo?",
+        [
+          { 
+            text: "Nuevo", 
+            onPress: () => addLog("[Draft] Usuario inicia formulario nuevo") 
+          },
+          { 
+            text: "Cargar", 
+            onPress: () => {
+              setFormData(JSON.parse(stored));
+              addLog("[Draft] Formulario cargado desde SecureStore (sin disparar logs de campo individual)");
+            } 
+          },
+        ]
+      );
+    }
+  })();
+}, []);
+
+
+  // ------------------ Cambios en números ------------------
+  const handleNumberChange = (field: string, increment: boolean) => {
+    setFormData(prev => {
+      const newValue = Math.max(0, (prev[field as keyof typeof prev] as number) + (increment ? 1 : -1));
+      addLog(`[FormData] Campo ${field} cambiado a ${newValue}`);
+      return { ...prev, [field]: newValue };
+    });
+  };
+
+  // ------------------ Toggle arrays ------------------
   const toggleArrayItem = (field: string, item: string) => {
     setFormData(prev => {
       const array = prev[field as keyof typeof prev] as string[];
       const newArray = array.includes(item)
         ? array.filter(i => i !== item)
         : [...array, item];
+      addLog(`[FormData] Campo ${field} actualizado: ${JSON.stringify(newArray)}`);
       return { ...prev, [field]: newArray };
     });
   };
 
+  // ------------------ Submit ------------------
   const handleSubmit = async () => {
     try {
       const user = auth.currentUser;
       if (!user) {
         Alert.alert("Error", "Debes iniciar sesión");
+        addLog("[Form] Usuario no logueado");
         return;
       }
 
-      await addDoc(collection(db, "socioNutritionalForms"), {
-        userId: user.uid,
-        ...formData,
-        submittedAt: new Date(),
-        status: "Pendiente de revisión"
-      });
+      // Guardar en SecureStore siempre para evidencia
+      await saveSecureData("socioFormDraft", JSON.stringify(formData));
+      addLog("[EncryptionTest] ✅ Contenido guardado en SecureStore: " + JSON.stringify(formData));
+      Alert.alert("SecureStore Test", "Datos guardados correctamente ✅");
 
-      await updateDoc(doc(db, "users", user.uid), {
-        formSubmitted: true,
-        status: "Evaluación"
-      });
+      if (!isConnected) {
+        addLog("[Form] Guardado local en SecureStore (offline)");
+        Alert.alert(
+          "Sin conexión",
+          "No hay internet, el formulario fue guardado de forma segura y se sincronizará automáticamente al reconectarse."
+        );
+        return;
+      }
 
-      Alert.alert(
-        "Formulario enviado",
-        "Tu solicitud ha sido enviada. Recibirás una notificación cuando sea revisada.",
-        [{ text: "OK", onPress: () => navigation.goBack() }]
-      );
+      // Validación HTTPS simulada (mitigación M5)
+    const firebaseEndpoint = "https://firestore.googleapis.com/v1/projects/foodbankapplication/databases/(default)/documents";
+    await secureFetch(firebaseEndpoint, { method: "GET" }, addLog);
+
+    addLog("[Seguridad] Validación HTTPS/TLS completada exitosamente");
+
+     // Después de enviar a Firebase
+    await addDoc(collection(db, "socioNutritionalForms"), {
+      userId: user.uid,
+      ...formData,
+      submittedAt: new Date(),
+      status: "Pendiente de revisión",
+    });
+
+    // Borrar draft
+    await saveSecureData("socioFormDraft", "");
+    addLog("[Draft] Draft borrado después de enviar formulario");
+
+
+// Borrar draft
+await saveSecureData("socioFormDraft", "");
+addLog("[Draft] Draft borrado después de enviar formulario");
+
+      addLog("[Form] Formulario enviado a Firebase correctamente");
+      Alert.alert("Formulario enviado", "Tu solicitud ha sido enviada exitosamente.");
+      navigation.goBack();
     } catch (error) {
-      console.error("Error guardando formulario:", error);
-      Alert.alert("Error", "No se pudo enviar el formulario");
+      if(error instanceof Error){
+        console.error("Error detallado:", error);
+      addLog("[Form]Error enviando formulario: " + (error.message || JSON.stringify(error)));
+      Alert.alert("Error", "No se pudo enviar el formulario.\n\n" + (error.message || "Revisa los logs para más detalles."));
+      }else{
+        console.log("Ocurrió un error desconocido", error);
+      }
+      
     }
   };
 
@@ -99,7 +183,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     return true;
   };
 
-  // ---------------- STEP 1 ----------------
+  // ------------------ Renders de pasos ------------------
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Información del hogar</Text>
@@ -181,13 +265,13 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
         <View style={styles.yesNoContainer}>
           <TouchableOpacity
             style={[styles.yesNoButton, formData.personasDiscapacidad === true && styles.yesNoButtonSelected]}
-            onPress={() => setFormData({ ...formData, personasDiscapacidad: true })}
+            onPress={() => { setFormData({ ...formData, personasDiscapacidad: true }); addLog("[FormData] personasDiscapacidad = true") }}
           >
             <Text style={[styles.yesNoText, formData.personasDiscapacidad === true && styles.yesNoTextSelected]}>Sí</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.yesNoButton, formData.personasDiscapacidad === false && styles.yesNoButtonSelected]}
-            onPress={() => setFormData({ ...formData, personasDiscapacidad: false })}
+            onPress={() => { setFormData({ ...formData, personasDiscapacidad: false }); addLog("[FormData] personasDiscapacidad = false") }}
           >
             <Text style={[styles.yesNoText, formData.personasDiscapacidad === false && styles.yesNoTextSelected]}>No</Text>
           </TouchableOpacity>
@@ -202,7 +286,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
             <TouchableOpacity
               key={option}
               style={[styles.optionButton, formData.espacioCocina === option && styles.optionButtonSelected]}
-              onPress={() => setFormData({ ...formData, espacioCocina: option })}
+              onPress={() => { setFormData({ ...formData, espacioCocina: option }); addLog(`[FormData] espacioCocina = ${option}`) }}
             >
               <Text style={[styles.optionText, formData.espacioCocina === option && styles.optionTextSelected]}>{option}</Text>
             </TouchableOpacity>
@@ -212,7 +296,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     </View>
   );
 
-  // ---------------- STEP 2 ----------------
+  // ------------------ STEP 2 ------------------
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Situación alimentaria</Text>
@@ -249,7 +333,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
                 <TouchableOpacity
                   key={option}
                   style={[styles.optionButton, formData[key] === option && styles.optionButtonSelected]}
-                  onPress={() => setFormData({ ...formData, [key]: option })}
+                  onPress={() => { setFormData({ ...formData, [key]: option }); addLog(`[FormData] ${key} = ${option}`) }}
                 >
                   <Text style={[styles.optionText, formData[key] === option && styles.optionTextSelected]}>
                     {item} - {option}
@@ -267,13 +351,13 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
         <View style={styles.yesNoContainer}>
           <TouchableOpacity
             style={[styles.yesNoButton, formData.dormirConHambre === true && styles.yesNoButtonSelected]}
-            onPress={() => setFormData({ ...formData, dormirConHambre: true })}
+            onPress={() => { setFormData({ ...formData, dormirConHambre: true }); addLog("[FormData] dormirConHambre = true") }}
           >
             <Text style={[styles.yesNoText, formData.dormirConHambre === true && styles.yesNoTextSelected]}>Sí</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.yesNoButton, formData.dormirConHambre === false && styles.yesNoButtonSelected]}
-            onPress={() => setFormData({ ...formData, dormirConHambre: false })}
+            onPress={() => { setFormData({ ...formData, dormirConHambre: false }); addLog("[FormData] dormirConHambre = false") }}
           >
             <Text style={[styles.yesNoText, formData.dormirConHambre === false && styles.yesNoTextSelected]}>No</Text>
           </TouchableOpacity>
@@ -282,7 +366,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     </View>
   );
 
-  // ---------------- STEP 3 ----------------
+  // ------------------ STEP 3 ------------------
   const renderStep3 = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Salud y situación económica</Text>
@@ -314,7 +398,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
           placeholder="Describe aquí..."
           multiline
           value={formData.dietaEspecial}
-          onChangeText={text => setFormData({ ...formData, dietaEspecial: text })}
+          onChangeText={text => { setFormData({ ...formData, dietaEspecial: text }); }}
         />
       </View>
 
@@ -326,7 +410,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
           placeholder="Describe aquí..."
           multiline
           value={formData.hospitalizacionesNutricion}
-          onChangeText={text => setFormData({ ...formData, hospitalizacionesNutricion: text })}
+          onChangeText={text => { setFormData({ ...formData, hospitalizacionesNutricion: text });  }}
         />
       </View>
 
@@ -338,143 +422,78 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
             <TouchableOpacity
               key={range}
               style={[styles.optionButton, formData.ingresoMensual === range && styles.optionButtonSelected]}
-              onPress={() => setFormData({ ...formData, ingresoMensual: range })}
+              onPress={() => { setFormData({ ...formData, ingresoMensual: range });  }}
             >
               <Text style={[styles.optionText, formData.ingresoMensual === range && styles.optionTextSelected]}>{range}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
-
-      {/* Servicios básicos */}
-      <View style={styles.questionBlock}>
-        <Text style={styles.questionLabel}>Servicios básicos disponibles</Text>
-        <View style={styles.optionsGrid}>
-          {SERVICES.map(service => (
-            <TouchableOpacity
-              key={service}
-              style={[styles.optionButton, formData.serviciosBasicos.includes(service) && styles.optionButtonSelected]}
-              onPress={() => toggleArrayItem('serviciosBasicos', service)}
-            >
-              <Text style={[styles.optionText, formData.serviciosBasicos.includes(service) && styles.optionTextSelected]}>
-                {service}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Fuentes de ingreso */}
-      <View style={styles.questionBlock}>
-        <Text style={styles.questionLabel}>Número de fuentes de ingreso en el hogar</Text>
-        <View style={styles.counterContainer}>
-          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('fuentesIngreso', false)}>
-            <Ionicons name="remove" size={24} color="#E53E3E" />
-          </TouchableOpacity>
-          <Text style={styles.counterValue}>{formData.fuentesIngreso}</Text>
-          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('fuentesIngreso', true)}>
-            <Ionicons name="add" size={24} color="#4CAF50" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Gastos en alimentos */}
-      <View style={styles.questionBlock}>
-        <Text style={styles.questionLabel}>Gastos aproximados en alimentos por mes</Text>
-        <View style={styles.counterContainer}>
-          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('gastosAlimentos', false)}>
-            <Ionicons name="remove" size={24} color="#E53E3E" />
-          </TouchableOpacity>
-          <Text style={styles.counterValue}>{formData.gastosAlimentos}</Text>
-          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('gastosAlimentos', true)}>
-            <Ionicons name="add" size={24} color="#4CAF50" />
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 
+  // ------------------ Render ------------------
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <ImageBackground source={require('../../../assets/background.jpg')} style={styles.headerBackground} resizeMode="cover">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-                      <Ionicons name="arrow-back" size={28} color="#fff" />
+    <ScrollView contentContainerStyle={styles.container}>
+      {step === 1 && renderStep1()}
+      {step === 2 && renderStep2()}
+      {step === 3 && renderStep3()}
+
+      {/* Navegación */}
+      <View style={styles.navigationContainer}>
+        {step > 1 && (
+          <TouchableOpacity style={styles.navButton} onPress={() => setStep(step - 1)}>
+            <Text style={styles.navButtonText}>Anterior</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Formulario Socio-Nutricional</Text>
-        </View>
-      </ImageBackground>
+        )}
+        {step < 3 && (
+          <TouchableOpacity style={[styles.navButton, !canContinue() && styles.navButtonDisabled]} onPress={() => canContinue() && setStep(step + 1)}>
+            <Text style={styles.navButtonText}>Siguiente</Text>
+          </TouchableOpacity>
+        )}
+        {step === 3 && (
+          <TouchableOpacity style={styles.navButton} onPress={handleSubmit}>
+            <Text style={styles.navButtonText}>Enviar</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
-      {/* Contenido */}
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
-
-        {/* Navegación entre pasos */}
-        <View style={styles.navigationContainer}>
-          {step > 1 && (
-            <TouchableOpacity style={styles.navButton} onPress={() => setStep(step - 1)}>
-              <Text style={styles.navButtonText}>Anterior</Text>
-            </TouchableOpacity>
-          )}
-          {step < 3 && (
-            <TouchableOpacity
-              style={[styles.navButton, !canContinue() && styles.navButtonDisabled]}
-              disabled={!canContinue()}
-              onPress={() => setStep(step + 1)}
-            >
-              <Text style={styles.navButtonText}>Siguiente</Text>
-            </TouchableOpacity>
-          )}
-          {step === 3 && (
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>Enviar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+      {/* Logs */}
+      <View style={styles.logContainer}>
+        {logs.map((log, i) => (
+          <Text key={i} style={styles.logText}>{log}</Text>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
-// ---------------- ESTILOS ----------------
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
-  scrollContainer: { padding: 16, paddingBottom: 40 },
-  headerBackground: { width: "100%", height: 120 },
-  header: { flexDirection: "row", alignItems: "center", paddingTop: 40, paddingHorizontal: 16 },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold", marginLeft: 16 },
-
-  stepContainer: { marginBottom: 20 },
-  stepTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 8 },
-  stepSubtitle: { fontSize: 16, marginBottom: 16 },
-
+  container: { padding: 20, backgroundColor: "#f7f7f7" },
+  stepContainer: { marginBottom: 30, backgroundColor: "#fff", padding: 20, borderRadius: 12, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 },
+  stepTitle: { fontSize: 24, fontWeight: "bold", marginBottom: 5, color: "#222" },
+  stepSubtitle: { fontSize: 14, color: "#666", marginBottom: 15 },
   questionBlock: { marginBottom: 20 },
-  questionLabel: { fontSize: 16, marginBottom: 8, fontWeight: "600" },
-  counterContainer: { flexDirection: "row", alignItems: "center" },
-  counterButton: { padding: 8, backgroundColor: "#ddd", borderRadius: 6, marginHorizontal: 10 },
-  counterValue: { fontSize: 18, fontWeight: "bold" },
-
-  yesNoContainer: { flexDirection: "row", gap: 12 },
-  yesNoButton: { padding: 10, borderWidth: 1, borderColor: "#aaa", borderRadius: 6 },
+  questionLabel: { fontSize: 16, marginBottom: 8, color: "#333" },
+  counterContainer: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+  counterButton: { padding: 10, borderWidth: 1, borderRadius: 8, marginHorizontal: 10, borderColor: "#ccc", backgroundColor: "#fff" },
+  counterValue: { fontSize: 18, fontWeight: "bold", minWidth: 35, textAlign: "center" },
+  yesNoContainer: { flexDirection: "row", marginTop: 5 },
+  yesNoButton: { flex: 1, padding: 12, borderWidth: 1, borderRadius: 8, marginHorizontal: 5, borderColor: "#ccc", backgroundColor: "#fff" },
   yesNoButtonSelected: { backgroundColor: "#4CAF50", borderColor: "#4CAF50" },
-  yesNoText: { color: "#000" },
+  yesNoText: { textAlign: "center", color: "#333", fontWeight: "500" },
   yesNoTextSelected: { color: "#fff", fontWeight: "bold" },
-
-  optionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  optionButton: { padding: 8, borderWidth: 1, borderColor: "#aaa", borderRadius: 6 },
+  optionsGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 5 },
+  optionButton: { paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderRadius: 8, margin: 5, borderColor: "#ccc", backgroundColor: "#fff" },
   optionButtonSelected: { backgroundColor: "#4CAF50", borderColor: "#4CAF50" },
-  optionText: { color: "#000", fontSize: 14 },
+  optionText: { fontSize: 14, color: "#333" },
   optionTextSelected: { color: "#fff", fontWeight: "bold" },
-
-  textInput: { borderWidth: 1, borderColor: "#ccc", borderRadius: 6, padding: 10, minHeight: 60, backgroundColor: "#fff" },
-
-  navigationContainer: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
-  navButton: { backgroundColor: "", padding: 12, borderRadius: 6 },
-  navButtonDisabled: { backgroundColor: "#4CAF50" },
-  navButtonText: { color: "#fff", fontWeight: "bold" },
-  submitButton: { flex: 1, backgroundColor: "#4CAF50", padding: 12, borderRadius: 6, alignItems: "center" },
-  submitButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  textInput: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, minHeight: 60, backgroundColor: "#fff", textAlignVertical: "top" },
+  navigationContainer: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
+  navButton: { flex: 1, backgroundColor: "#4CAF50", padding: 14, borderRadius: 10, alignItems: "center", marginHorizontal: 5 },
+  navButtonDisabled: { backgroundColor: "#aaa" },
+  navButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  logContainer: { marginTop: 20, borderTopWidth: 1, borderTopColor: "#ccc", paddingTop: 10 },
+  logText: { fontSize: 12, color: "#333" }
 });
+

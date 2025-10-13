@@ -1,6 +1,11 @@
-import { StyleSheet} from 'react-native';
+import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './src/screens/firebaseconfig'; // ✅ QUITAR Firestore
+
+// Importaciones de pantallas
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import UserTypeScreen from './src/screens/chooseProfile';
@@ -16,44 +21,72 @@ import DeliveryQR from './src/screens/Beneficiary/DeliveryQR';
 import StaffDashboard from './src/screens/Volunteer/StaffDashboard';
 import PreStudyForm from './src/screens/Beneficiary/PreStudyForm';
 import SocioEconomicSurvey from './src/screens/Volunteer/SocioEconomicSurvey';
-import * as ExpoSplashScreen from 'expo-splash-screen';
 import SplashScreen from './src/screens/SplashScreen';
-import { useEffect } from 'react'; 
+import UnauthorizedScreen from './src/screens/UnauthorizedScreen';
 import DeliveryHistoryScreen from './src/screens/DeliveryHistory';
+import * as ExpoSplashScreen from 'expo-splash-screen';
+import { startFormSyncListener } from './src/services/syncService';
 
 ExpoSplashScreen.preventAutoHideAsync();
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-   useEffect(() => {
-    // Ocultar el splash nativo
-    ExpoSplashScreen.hideAsync();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = startFormSyncListener();
+    
+    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('✅ Auth state cambiado - INSTANTÁNEO');
+      setUser(user); // ✅ SOLO esto - INSTANTÁNEO
+      setLoading(false);
+      ExpoSplashScreen.hideAsync();
+    });
+
+    return () => {
+      unsubscribe();
+      authUnsubscribe();
+    };
   }, []);
+
+  if (loading) {
+    return <SplashScreen />;
+  }
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Splash" 
-          component={SplashScreen} 
-          options={{ headerShown: false }} />
+        
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Profile" component={UserTypeScreen}/>
-        <Stack.Screen name="Registrar" component={RegisterScreen} />
-        <Stack.Screen name="ForgotPassword" component={RegisterScreen} />
-        <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
-        <Stack.Screen name="BeneficiariesList" component={BeneficiariesList} />
-        <Stack.Screen name="StandardTemplate" component={StandardTemplateScreen} />
-        <Stack.Screen name="CommunitiesManagement" component={CommunitiesManagementScreen} />
-        <Stack.Screen name="DeliveryManagement" component={DeliveryManagementScreen} />
-        <Stack.Screen name="DeliveryQR" component={DeliveryQR}/>
-        <Stack.Screen name="BeneficiaryDashboard" component={BeneficiaryDashboard}/>
-        <Stack.Screen name="DeliveryDetails" component={DeliveryDetails}/>
-        <Stack.Screen name="DeliveryHistory" component={DeliveryHistoryScreen}/>
-        <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-        <Stack.Screen name="StaffDashboard" component={StaffDashboard}/>
-        <Stack.Screen name="PreStudyForm" component={PreStudyForm}/>
-        <Stack.Screen name="SocioEconomicSurvey" component={SocioEconomicSurvey}/>
+        <Stack.Screen name="Profile" component={UserTypeScreen} />
+        
+        {!user ? (
+          // Usuario NO autenticado
+          <>
+            <Stack.Screen name="Registrar" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={RegisterScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+            <Stack.Screen name="StaffDashboard" component={StaffDashboard} />
+            <Stack.Screen name="BeneficiaryDashboard" component={BeneficiaryDashboard} />
+            <Stack.Screen name="BeneficiariesList" component={BeneficiariesList} />
+            <Stack.Screen name="StandardTemplate" component={StandardTemplateScreen} />
+            <Stack.Screen name="CommunitiesManagement" component={CommunitiesManagementScreen} />
+            <Stack.Screen name="DeliveryManagement" component={DeliveryManagementScreen} />
+            <Stack.Screen name="SocioEconomicSurvey" component={SocioEconomicSurvey} />
+            <Stack.Screen name="DeliveryQR" component={DeliveryQR} />
+            <Stack.Screen name="PreStudyForm" component={PreStudyForm} />
+            <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+            <Stack.Screen name="DeliveryDetails" component={DeliveryDetails} />
+            <Stack.Screen name="DeliveryHistory" component={DeliveryHistoryScreen} />
+            <Stack.Screen name="Unauthorized" component={UnauthorizedScreen} />
+          </>
+        )}
+        
       </Stack.Navigator>
     </NavigationContainer>
   );
