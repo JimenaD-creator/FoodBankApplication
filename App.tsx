@@ -22,7 +22,9 @@ import StaffDashboard from './src/screens/Volunteer/StaffDashboard';
 import PreStudyForm from './src/screens/Beneficiary/PreStudyForm';
 import SocioEconomicSurvey from './src/screens/Volunteer/SocioEconomicSurvey';
 import SplashScreen from './src/screens/SplashScreen';
+import StaffList from './src/screens/Admin/StaffList';
 import UnauthorizedScreen from './src/screens/UnauthorizedScreen';
+import DeliveryListScreen from './src/screens/Admin/DeliveriesList';
 import DeliveryHistoryScreen from './src/screens/DeliveryHistory';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { startFormSyncListener } from './src/services/syncService';
@@ -74,6 +76,7 @@ export default function App() {
             <Stack.Screen name="StaffDashboard" component={StaffDashboard} />
             <Stack.Screen name="BeneficiaryDashboard" component={BeneficiaryDashboard} />
             <Stack.Screen name="BeneficiariesList" component={BeneficiariesList} />
+            <Stack.Screen name="DeliveriesList" component={DeliveryListScreen}/>
             <Stack.Screen name="StandardTemplate" component={StandardTemplateScreen} />
             <Stack.Screen name="CommunitiesManagement" component={CommunitiesManagementScreen} />
             <Stack.Screen name="DeliveryManagement" component={DeliveryManagementScreen} />
@@ -81,6 +84,7 @@ export default function App() {
             <Stack.Screen name="DeliveryQR" component={DeliveryQR} />
             <Stack.Screen name="PreStudyForm" component={PreStudyForm} />
             <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+            <Stack.Screen name="StaffList" component={StaffList}/>
             <Stack.Screen name="DeliveryDetails" component={DeliveryDetails} />
             <Stack.Screen name="DeliveryHistory" component={DeliveryHistoryScreen} />
             <Stack.Screen name="Unauthorized" component={UnauthorizedScreen} />

@@ -2,6 +2,8 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import {db} from '../firebaseconfig';
 
 export default function AdminDashboard({ navigation }: any) {
   const [deliveriesCount, setDeliveriesCount] = useState(0);
@@ -10,14 +12,25 @@ export default function AdminDashboard({ navigation }: any) {
   const [communitiesCount, setCommunitiesCount] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDeliveriesCount ((prev) => prev + 1);
-      setBeneficiariesCount((prev) => prev+2);
-      setVolunteersCount((prev) => prev+1);
-      setCommunitiesCount(5);
-    }, 2000)
+    const unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      const allUsers = snapshot.docs.map(doc => doc.data());
+    setBeneficiariesCount(allUsers.filter(u => u.role === "beneficiary").length);
+    setVolunteersCount(allUsers.filter(u => u.role === "staff").length);
+  });
 
-    return() => clearInterval(interval);
+  const unsubscribeDeliveries = onSnapshot(collection(db, "scheduledDeliveries"), (snapshot) => {
+    setDeliveriesCount(snapshot.size);
+  });
+
+  const unsubscribeCommunities = onSnapshot(collection(db, "communities"), (snapshot) => {
+    setCommunitiesCount(snapshot.size);
+  });
+
+  return () => {
+    unsubscribeUsers();
+    unsubscribeDeliveries();
+    unsubscribeCommunities();
+  };
     
   }, [])
   
@@ -67,21 +80,30 @@ export default function AdminDashboard({ navigation }: any) {
               <Text style={styles.cardLabel}>Beneficiarios</Text>
             </TouchableOpacity>
 
-            <View style={[styles.card, styles.deliveriesCard]}>
+           <TouchableOpacity
+            style={[styles.card, styles.deliveriesCard]}
+              onPress={() => navigation.navigate("DeliveriesList")}
+           >
               <View style={styles.cardIcon}>
                 <Ionicons name="cube" size={32} color="#2196F3" />
               </View>
               <Text style={styles.cardValue}>{deliveriesCount}</Text>
               <Text style={styles.cardLabel}>Despensas</Text>
-            </View>
+              </TouchableOpacity>
+            
+            
+          <TouchableOpacity
+              style={[styles.card, styles.staffCard]}
+              onPress={() => navigation.navigate("StaffList")}
 
-            <View style={[styles.card, styles.staffCard]}>
+          >
               <View style={styles.cardIcon}>
                 <Ionicons name="person" size={32} color="#FF9800" />
               </View>
               <Text style={styles.cardValue}>{volunteersCount}</Text>
               <Text style={styles.cardLabel}>Staff activo</Text>
-            </View>
+          
+          </TouchableOpacity>
 
            <TouchableOpacity
            style={[styles.card, styles.communitiesCard]}

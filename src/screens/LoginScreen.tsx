@@ -184,8 +184,10 @@ export default function LoginScreen({ navigation }: any) {
       <View style={styles.formContainer}>
         <View style={styles.pinkContainer}>
           <View style={styles.inputContainer}>
-             <Ionicons name="mail-outline" size={20} color="#718096" style={styles.inputIcon} />
+             
             <Text style={styles.inputLabel}>Correo</Text>
+            <View style = {styles.inputWrapper}>
+               <Ionicons name="mail-outline" size={20} color="#718096" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder=" "
@@ -195,11 +197,13 @@ export default function LoginScreen({ navigation }: any) {
               onChangeText={setEmail}
               editable={!loading}
             />
+            </View>
           </View>
 
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#718096" style={styles.inputIcon} />
             <Text style={styles.inputLabel}>Contraseña</Text>
+            <View style = {styles.inputWrapper}>
+            <Ionicons name="lock-closed-outline" size={20} color="#718096" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder=" "
@@ -218,6 +222,7 @@ export default function LoginScreen({ navigation }: any) {
                     color="#718096"
                   />
                 </TouchableOpacity>
+                </View>
           </View>
 
           <TouchableOpacity 
@@ -362,20 +367,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inputLabel: {
-    fontSize: 16,
-    color: "#2D3748",
-    marginBottom: 8,
-    fontWeight: '500',
+     fontSize: 16,
+      color: "#2D3748",
+      marginBottom: 8,
+      fontWeight: '500',
   },
   input: {
+    flex: 1,
     height: 50,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 15,
     fontSize: 16,
     color: "#2D3748",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
   },
   button: {
     height: 50,
@@ -521,11 +522,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   eyeIcon: {
-    flexDirection: 'row',
-    padding: 10,
+    padding: 8,
+    marginLeft: 4,
   },
   inputIcon: {
-    flexDirection: 'row',
-    padding: 10,
+    marginRight: 10,
   },
+  inputWrapper: {
+     flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: "#fff",
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: "#E2E8F0",
+      paddingHorizontal: 12,
+      height: 50,
+  }
 });

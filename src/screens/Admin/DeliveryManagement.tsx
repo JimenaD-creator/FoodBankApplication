@@ -14,6 +14,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
   const [standardTemplate, setStandardTemplate] = useState<any>(null);
 
   const [communities, setCommunities] = useState<any[]>([]);
+  const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
   const [volunteers, setVolunteers] = useState<any[]>([]);
   
   useEffect(() => {
@@ -88,6 +89,10 @@ export default function DeliveryManagementScreen({ navigation }: any) {
           id: v.id,
           name: v.fullName || v.name,
         })),
+         beneficiaries: beneficiaries.map((b) => ({
+          id: b.id,
+          name: b.nombre || b.fullName,
+        })),
         products: standardTemplate,
         status: "Programada",
         createdAt: new Date(),
@@ -138,7 +143,43 @@ export default function DeliveryManagementScreen({ navigation }: any) {
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedCommunity}
-              onValueChange={(itemValue) => setSelectedCommunity(itemValue)}
+              onValueChange={async (itemValue) => {
+  setSelectedCommunity(itemValue);
+
+  if (itemValue) {
+    try {
+       // Obtener datos de la comunidad seleccionada
+      const selectedCommunityData = communities.find((c) => c.id === itemValue);
+      const communityName = selectedCommunityData?.nombre;
+
+      // Cargar todos los usuarios
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const usersData = usersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // Filtrar solo beneficiarios con esa comunidad por nombre
+      const communityBeneficiaries = usersData.filter(
+        (user) =>
+          user.role === "beneficiary" &&
+          user.community &&
+          user.community.trim().toLowerCase() === communityName.trim().toLowerCase()
+      );
+
+      setBeneficiaries(communityBeneficiaries);
+      console.log(
+        `Beneficiarios vinculados con comunidad ${communityName}:`,
+        communityBeneficiaries.length
+      );
+    } catch (error) {
+      console.error("Error al cargar beneficiarios:", error);
+    }
+  } else {
+    setBeneficiaries([]);
+  }
+}}
+
               style={styles.picker}
             >
               <Picker.Item label="Selecciona una comunidad" value="" />
