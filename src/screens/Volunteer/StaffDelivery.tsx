@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, ImageBackground, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseconfig";
@@ -78,17 +78,31 @@ export default function StaffDelivery({ route, navigation }: any) {
   if (loading) return <Text style={{ marginTop: 50, textAlign: "center" }}>Cargando despensa...</Text>;
 
   return (
-    <ScrollView style={{ padding: 20 }}>
-      <Text style={styles.header}>Entrega programada</Text>
-      <Text>Comunidad: {delivery.communityName}, {delivery.municipio}</Text>
-      <Text>Fecha: {formatDate(delivery.deliveryDate)}</Text>
-      <Text>Hora: {formatTime(delivery.deliveryDate)}</Text>
-      <Text>Estatus: {delivery.status}</Text>
+    <ScrollView style={{ padding: 0 }}>
+      <ImageBackground 
+        source={require('../../../assets/background.jpg')}
+        style={styles.headerBackground}
+        resizeMode="cover"
+        >
+        <View style={styles.header}>
+        <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#E53E3E" />
+                </TouchableOpacity>
+                <Text style={styles.title}>Entrega Programada</Text>
+              </View>
+            </ImageBackground>
+      <Text style= {styles.subtitle}>Comunidad: {delivery.communityName}, {delivery.municipio}</Text>
+      <Text style= {styles.subtitle}>Fecha: {formatDate(delivery.deliveryDate)}</Text>
+      <Text style= {styles.subtitle}>Hora: {formatTime(delivery.deliveryDate)}</Text>
+      <Text style= {styles.subtitle}>Estatus: {delivery.status}</Text>
 
       {PRODUCT_CATEGORIES.map((cat) => {
         const catProducts = groupedProducts[cat.id] || [];
         return (
-          <View key={cat.id} style={{ marginTop: 20 }}>
+          <View key={cat.id} style={{ marginTop: 20, padding: 20 }}>
 
             <View style={{ backgroundColor: cat.color, padding: 10, borderRadius: 10, flexDirection: "row", justifyContent: "space-between" }}>
               <Text style={{ fontWeight: "bold" }}>{cat.name}</Text>
@@ -120,8 +134,55 @@ export default function StaffDelivery({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7FAFC", padding: 20 },
-  header: { fontSize: 22, fontWeight: "bold", marginBottom: 20, color: "#2D3748" },
+  container: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
+  headerBackground: {
+    paddingTop: 40,
+    paddingBottom: 20,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  backButton: {
+    padding: 5,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#E53E3E",
+    flex: 1,
+    textAlign: "center",
+    marginHorizontal: 10,
+  },
+  subtitle : {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#E53E3E",
+    flex: 1,
+    textAlign: "left",
+    marginHorizontal: 10,
+  },
+  headerActions: {
+    flexDirection: "row",
+  },
+  headerActionButton: {
+    padding: 5,
+    marginLeft: 10,
+  },
   infoCard: {
     backgroundColor: "#fff",
     padding: 20,
