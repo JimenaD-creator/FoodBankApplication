@@ -102,7 +102,7 @@ export default function StaffDelivery({ route, navigation }: any) {
       {PRODUCT_CATEGORIES.map((cat) => {
         const catProducts = groupedProducts[cat.id] || [];
         return (
-          <View key={cat.id} style={{ marginTop: 20, padding: 20 }}>
+          <View key={cat.id} style={{ marginTop: 20, marginHorizontal: 5 }}>
 
             <View style={{ backgroundColor: cat.color, padding: 10, borderRadius: 10, flexDirection: "row", justifyContent: "space-between" }}>
               <Text style={{ fontWeight: "bold" }}>{cat.name}</Text>
@@ -206,7 +206,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 30,
+    marginTop: 20,
+    marginBottom: 20,
+    marginHorizontal: 25,
   },
   qrButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
 });
