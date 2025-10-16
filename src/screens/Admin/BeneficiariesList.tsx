@@ -79,49 +79,58 @@ export default function BeneficiariesList({ navigation }: any) {
   };
 
   const renderItem = ({ item }: any) => (
-    <TouchableOpacity style={styles.item} activeOpacity={0.7}>
-      <View style={styles.itemHeader}>
-        <View style={styles.nameContainer}>
-          <Ionicons name="person" size={20} color="#4CAF50" />
-          <Text style={styles.name}>{item.fullName || "Nombre no definido"}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Ionicons 
-            name={getStatusIcon(item.status)} 
-            size={12} 
-            color="#fff" 
-          />
-          <Text style={styles.statusText}>{item.status || "Sin definir"}</Text>
-        </View>
+  <TouchableOpacity style={styles.item} activeOpacity={0.7}>
+    <View style={styles.itemHeader}>
+      <View style={styles.nameContainer}>
+        <Ionicons name="person" size={20} color="#4CAF50" />
+        <Text style={styles.name}>{item.fullName || "Nombre no definido"}</Text>
+      </View>
+      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+        <Ionicons 
+          name={getStatusIcon(item.status)} 
+          size={12} 
+          color="#fff" 
+        />
+        <Text style={styles.statusText}>{item.status || "Sin definir"}</Text>
+      </View>
+    </View>
+    
+    <View style={styles.infoContainer}>
+      <View style={styles.infoRow}>
+        <Ionicons name="location-outline" size={16} color="#718096" />
+        <Text style={styles.info}>
+          <Text style={styles.infoLabel}>Comunidad: </Text>
+          {item.community || "No definido"}
+        </Text>
       </View>
       
-      <View style={styles.infoContainer}>
-        <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={16} color="#718096" />
-          <Text style={styles.info}>
-            <Text style={styles.infoLabel}>Comunidad: </Text>
-            {item.community || "No definido"}
-          </Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Ionicons name="call-outline" size={16} color="#718096" />
-          <Text style={styles.info}>
-            <Text style={styles.infoLabel}>Teléfono: </Text>
-            {item.phone || "No definido"}
-          </Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Ionicons name="people-outline" size={16} color="#718096" />
-          <Text style={styles.info}>
-            <Text style={styles.infoLabel}>Familia: </Text>
-            {item.familySize ? `${item.familySize} personas` : "No definido"}
-          </Text>
-        </View>
+      <View style={styles.infoRow}>
+        <Ionicons name="call-outline" size={16} color="#718096" />
+        <Text style={styles.info}>
+          <Text style={styles.infoLabel}>Teléfono: </Text>
+          {item.phone || "No definido"}
+        </Text>
       </View>
+      
+      <View style={styles.infoRow}>
+        <Ionicons name="people-outline" size={16} color="#718096" />
+        <Text style={styles.info}>
+          <Text style={styles.infoLabel}>Familia: </Text>
+          {item.familySize ? `${item.familySize} personas` : "No definido"}
+        </Text>
+      </View>
+    </View>
+
+    {/* NUEVO BOTÓN PARA VER ESTUDIO */}
+    <TouchableOpacity
+      style={styles.studyButton}
+      onPress={() => navigation.navigate("BeneficiaryStudyScreen", { beneficiaryId: item.id })}
+    >
+      <Ionicons name="document-text-outline" size={16} color="#2196F3" />
+      <Text style={styles.studyButtonText}>Ver estudios</Text>
     </TouchableOpacity>
-  );
+  </TouchableOpacity>
+);
 
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
@@ -376,4 +385,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 40,
   },
+  studyButton: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "rgba(33, 150, 243, 0.1)",
+  paddingHorizontal: 16,
+  paddingVertical: 10,
+  borderRadius: 8,
+  marginTop: 12,
+  gap: 8,
+},
+studyButtonText: {
+  fontSize: 14,
+  color: "#2196F3",
+  fontWeight: "600",
+},
 });

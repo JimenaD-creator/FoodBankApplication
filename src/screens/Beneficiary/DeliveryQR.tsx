@@ -1,9 +1,39 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import QRCode from "react-native-qrcode-svg";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebaseconfig";
 
 export default function DeliveryQR({ route }: any) {
-  const { delivery } = route.params;
+  const { deliveryId } = route.params;
+  const [qrValue, setQrValue] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDelivery = async () => {
+      const docRef = doc(db, "deliveries", deliveryId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setQrValue(JSON.stringify({
+          deliveryId,
+          userId: data.userId,
+          qrCode: data.qrCode
+        }));
+      }
+    };
+
+    fetchDelivery();
+  }, [deliveryId]);
+
+  if (!qrValue) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+        <Text>Cargando QR...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -14,7 +44,7 @@ export default function DeliveryQR({ route }: any) {
 
       <View style={styles.qrContainer}>
         <QRCode
-          value={delivery.id}
+          value={qrValue}
           size={220}
           backgroundColor="#fff"
           color="#4CAF50"
@@ -29,4 +59,5 @@ const styles = StyleSheet.create({
   header: { fontSize: 22, fontWeight: "600", marginBottom: 12, textAlign: "center" },
   subtitle: { fontSize: 15, color: "#718096", textAlign: "center", marginBottom: 30 },
   qrContainer: { backgroundColor: "#fff", padding: 20, borderRadius: 20, elevation: 2, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

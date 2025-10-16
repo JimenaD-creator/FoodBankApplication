@@ -5,6 +5,7 @@ import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseconfig";
 import { collection, getDocs, addDoc, doc, getDoc } from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid";
 
 export default function DeliveryManagementScreen({ navigation }: any) {
   const [selectedCommunity, setSelectedCommunity] = useState<string>("");
@@ -79,24 +80,30 @@ export default function DeliveryManagementScreen({ navigation }: any) {
     try {
       const selectedCommunityData = communities.find(c => c.id === selectedCommunity);
       
-      await addDoc(collection(db, "scheduledDeliveries"), {
-        communityId: selectedCommunity,
-        communityName: selectedCommunityData?.nombre || "",
-        municipio: selectedCommunityData?.municipio || "",
-        familias: selectedCommunityData?.familias || 0,
-        deliveryDate: date,
-        volunteers: selectedVolunteers.map((v) => ({
-          id: v.id,
-          name: v.fullName || v.name,
-        })),
-         beneficiaries: beneficiaries.map((b) => ({
-          id: b.id,
-          name: b.nombre || b.fullName,
-        })),
-        products: standardTemplate,
-        status: "Programada",
-        createdAt: new Date(),
-      });
+       // 🔹 Generar un código QR único por beneficiario
+    const beneficiariesWithQR = beneficiaries.map((b) => ({
+      id: b.id,
+      name: b.nombre || b.fullName,
+      qrCode: uuidv4(), // 🔹 Código único
+      redeemed: false,  // 🔹 (Opcional) Campo para saber si ya fue usada la entrega
+    }));
+
+    // 🔹 Guardar la entrega completa
+    const deliveryRef = await addDoc(collection(db, "scheduledDeliveries"), {
+      communityId: selectedCommunity,
+      communityName: selectedCommunityData?.nombre || "",
+      municipio: selectedCommunityData?.municipio || "",
+      familias: selectedCommunityData?.familias || 0,
+      deliveryDate: date,
+      volunteers: selectedVolunteers.map((v) => ({
+        id: v.id,
+        name: v.fullName || v.name,
+      })),
+      beneficiaries: beneficiariesWithQR,
+      products: standardTemplate,
+      status: "Programada",
+      createdAt: new Date(),
+    });
 
       Alert.alert("Éxito", "Entrega programada correctamente", [
         { text: "OK", onPress: () => navigation.goBack() }

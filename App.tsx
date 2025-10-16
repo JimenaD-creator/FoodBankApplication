@@ -26,6 +26,8 @@ import StaffList from './src/screens/Admin/StaffList';
 import UnauthorizedScreen from './src/screens/UnauthorizedScreen';
 import DeliveryListScreen from './src/screens/Admin/DeliveriesList';
 import DeliveryHistoryScreen from './src/screens/DeliveryHistory';
+import DeliveryAssistanceScreen from './src/screens/Admin/BeneficiaryAttendance';
+import BeneficiaryStudyScreen from './src/screens/Admin/BeneficiaryStudyScreen';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { startFormSyncListener } from './src/services/syncService';
 
@@ -87,6 +89,8 @@ export default function App() {
             <Stack.Screen name="StaffList" component={StaffList}/>
             <Stack.Screen name="DeliveryDetails" component={DeliveryDetails} />
             <Stack.Screen name="DeliveryHistory" component={DeliveryHistoryScreen} />
+            <Stack.Screen name="BeneficiaryAttendance" component={DeliveryAssistanceScreen}/>
+            <Stack.Screen name="BeneficiaryStudyScreen" component={BeneficiaryStudyScreen}/>
             <Stack.Screen name="Unauthorized" component={UnauthorizedScreen} />
           </>
         )}

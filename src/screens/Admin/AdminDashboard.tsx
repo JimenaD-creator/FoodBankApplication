@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, query, where } from "firebase/firestore";
 import {db} from '../firebaseconfig';
 
 export default function AdminDashboard({ navigation }: any) {
@@ -18,9 +18,46 @@ export default function AdminDashboard({ navigation }: any) {
     setVolunteersCount(allUsers.filter(u => u.role === "staff").length);
   });
 
-  const unsubscribeDeliveries = onSnapshot(collection(db, "scheduledDeliveries"), (snapshot) => {
-    setDeliveriesCount(snapshot.size);
-  });
+ const unsubscribeDeliveries = onSnapshot(collection(db, "scheduledDeliveries"), async (snapshot) => {
+  try {
+    console.log("=== CÁLCULO COMO EN LISTA DE ENTREGAS ===");
+    
+    // Obtener todas las entregas programadas
+    const scheduledDeliveriesRef = collection(db, 'scheduledDeliveries');
+    const scheduledSnapshot = await getDocs(scheduledDeliveriesRef);
+
+    // Obtener todos los beneficiarios
+    const usersRef = collection(db, 'users');
+    const beneficiariesQuery = query(usersRef, where('role', '==', 'beneficiary'));
+    const beneficiariesSnapshot = await getDocs(beneficiariesQuery);
+
+    // Crear mapa de beneficiarios
+    const beneficiariesMap: any = {};
+    beneficiariesSnapshot.forEach(doc => {
+      beneficiariesMap[doc.id] = { id: doc.id, ...doc.data() };
+    });
+
+    let totalDespensasIndividuales = 0;
+
+    scheduledSnapshot.forEach(doc => {
+      const delivery = doc.data();
+
+      // Encontrar beneficiarios que coincidan con la comunidad de la entrega
+      const matchingBeneficiaries = Object.values(beneficiariesMap).filter(
+        (b: any) => b.community?.toLowerCase?.() === delivery.communityName?.toLowerCase?.()
+      );
+
+      // Cada beneficiario coincidente representa 1 despensa individual
+      totalDespensasIndividuales += matchingBeneficiaries.length;
+    });
+
+    console.log("🚚 TOTAL DE DESPENSAS INDIVIDUALES:", totalDespensasIndividuales);
+    setDeliveriesCount(totalDespensasIndividuales);
+
+  } catch (error) {
+    console.error("Error calculando despensas:", error);
+  }
+});
 
   const unsubscribeCommunities = onSnapshot(collection(db, "communities"), (snapshot) => {
     setCommunitiesCount(snapshot.size);
