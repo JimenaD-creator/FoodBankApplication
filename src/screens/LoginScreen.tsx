@@ -37,7 +37,15 @@ export default function LoginScreen({ navigation }: any) {
           break;
 
         case 'staff':
-          navigation.replace("StaffDashboard");
+          const userStatus = userData.status;
+          switch (userStatus) {
+            case 'Pendiente':
+              navigation.replace("StaffNotApproved");
+              break;
+            case 'Aprobado':
+              navigation.replace("StaffDashboard");
+              break;
+          }
           break;
 
         case 'beneficiary':
