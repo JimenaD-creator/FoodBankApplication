@@ -46,31 +46,10 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
         return;
       }
 
-      const q = query(
-        collection(db, "scheduledDeliveries"),
-        where("volunteers", "array-contains", currentUser.uid), 
-        orderBy("deliveryDate", "desc")
-      );
+      console.log("🔍 Buscando entregas para el voluntario:", currentUser.uid);
 
-      const snapshot = await getDocs(q);
-      const deliveriesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Delivery));
-
-      setDeliveries(deliveriesData);
-    } catch (error) {
-      console.error("Error cargando entregas:", error);
-      // Si falla la consulta con array-contains, intentar cargar todas y filtrar después
-      loadAllDeliveriesAndFilter();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Método alternativo si falla la consulta con array-contains
-  const loadAllDeliveriesAndFilter = async () => {
-    try {
+      // ✅ SOLUCIÓN: Cargar TODAS las entregas y filtrar localmente
+      // porque array-contains no funciona con objetos anidados
       const q = query(
         collection(db, "scheduledDeliveries"),
         orderBy("deliveryDate", "desc")
@@ -82,15 +61,25 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
         ...doc.data()
       } as Delivery));
 
-      // Filtrar entregas donde el usuario actual es voluntario
-      const userDeliveries = allDeliveries.filter(delivery => 
-        delivery.volunteers.some(volunteer => volunteer.id === currentUser?.uid)
-      );
+      console.log("📊 Total de entregas en sistema:", allDeliveries.length);
 
+      // Filtrar entregas donde el usuario actual es voluntario
+      const userDeliveries = allDeliveries.filter(delivery => {
+        const isVolunteer = delivery.volunteers?.some(volunteer => volunteer.id === currentUser.uid);
+        if (isVolunteer) {
+          console.log("✅ Encontrada entrega para:", delivery.communityName);
+        }
+        return isVolunteer;
+      });
+
+      console.log("🎯 Entregas asignadas al usuario:", userDeliveries.length);
       setDeliveries(userDeliveries);
+
     } catch (error) {
-      console.error("Error cargando todas las entregas:", error);
+      console.error("Error cargando entregas:", error);
       setDeliveries([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,8 +91,10 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
     }
   };
 
-  // Resto del código permanece igual...
   const formatDate = (timestamp: any) => {
+    if (!timestamp || !timestamp.toDate) {
+      return "Fecha no disponible";
+    }
     const date = timestamp.toDate();
     return date.toLocaleDateString('es-MX', {
       day: '2-digit',
@@ -113,6 +104,9 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   };
 
   const formatFullDate = (timestamp: any) => {
+    if (!timestamp || !timestamp.toDate) {
+      return "Fecha no disponible";
+    }
     const date = timestamp.toDate();
     return date.toLocaleDateString('es-MX', {
       weekday: 'long',
@@ -123,6 +117,9 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   };
 
   const formatTime = (timestamp: any) => {
+    if (!timestamp || !timestamp.toDate) {
+      return "Hora no disponible";
+    }
     const date = timestamp.toDate();
     return date.toLocaleTimeString('es-MX', {
       hour: '2-digit',
@@ -235,7 +232,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
               {/* Voluntarios */}
               <View style={styles.detailSection}>
                 <Text style={styles.detailSectionTitle}>Voluntarios asignados</Text>
-                {selectedDelivery.volunteers.map((volunteer) => (
+                {selectedDelivery.volunteers?.map((volunteer) => (
                   <View key={volunteer.id} style={styles.volunteerDetailCard}>
                     <Ionicons name="person-circle" size={32} color="#4CAF50" />
                     <Text style={styles.volunteerDetailName}>
@@ -367,6 +364,13 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                 : `No tienes entregas ${selectedFilter.toLowerCase()}`
               }
             </Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={loadDeliveries}
+            >
+              <Ionicons name="refresh" size={16} color="#4CAF50" />
+              <Text style={styles.retryButtonText}>Actualizar</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           filteredDeliveries.map((delivery) => (
@@ -380,10 +384,10 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                 <View style={styles.deliveryCardLeft}>
                   <View style={styles.dateBox}>
                     <Text style={styles.dateDay}>
-                      {delivery.deliveryDate.toDate().getDate()}
+                      {delivery.deliveryDate?.toDate()?.getDate() || "?"}
                     </Text>
                     <Text style={styles.dateMonth}>
-                      {delivery.deliveryDate.toDate().toLocaleDateString('es-MX', { month: 'short' })}
+                      {delivery.deliveryDate?.toDate()?.toLocaleDateString('es-MX', { month: 'short' }) || "Fecha"}
                     </Text>
                   </View>
                   <View style={styles.deliveryCardInfo}>
@@ -398,7 +402,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                 <View style={styles.cardInfo}>
                   <Ionicons name="people-outline" size={16} color="#718096" />
                   <Text style={styles.cardInfoText}>
-                    {delivery.volunteers.length} voluntario{delivery.volunteers.length !== 1 ? 's' : ''}
+                    {delivery.volunteers?.length || 0} voluntario{delivery.volunteers?.length !== 1 ? 's' : ''}
                   </Text>
                 </View>
                 <View style={styles.cardInfo}>
@@ -419,7 +423,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   );
 }
 
-// Los estilos permanecen iguales...
+// Agregar estilos para el botón de reintento
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -522,6 +526,21 @@ const styles = StyleSheet.create({
     color: "#A0AEC0",
     marginTop: 16,
     textAlign: "center",
+    marginBottom: 16,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    color: "#4CAF50",
+    fontWeight: "500",
   },
   deliveryCard: {
     backgroundColor: "#fff",
