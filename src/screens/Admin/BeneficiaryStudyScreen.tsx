@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { db } from "../firebaseconfig";
@@ -71,177 +71,178 @@ export default function BeneficiaryStudyScreen({ navigation, route }: any) {
     );
   }
 
+  const InfoCard = ({ icon, label, value, iconColor = "#4CAF50" }: any) => (
+    <View style={styles.infoCard}>
+      <View style={[styles.infoIconContainer, { backgroundColor: `${iconColor}15` }]}>
+        <Ionicons name={icon} size={20} color={iconColor} />
+      </View>
+      <View style={styles.infoContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
+    </View>
+  );
+
   const renderPreStudyContent = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Ionicons name="document-text" size={24} color="#4CAF50" />
-        <Text style={styles.sectionTitle}>Pre-Estudio Socio-Nutricional</Text>
-      </View>
-
-      {/* Información del Hogar - COMPLETA */}
-      <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>🏠 Información del Hogar</Text>
-        
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Total de personas en el hogar:</Text>
-          <Text style={styles.dataValue}>{preStudyData.household?.totalPersonas || "No especificado"}</Text>
-        </View>
-        
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Menores de edad:</Text>
-          <Text style={styles.dataValue}>{preStudyData.household?.menoresEdad || "No especificado"}</Text>
-        </View>
-
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Adultos que trabajan:</Text>
-          <Text style={styles.dataValue}>{preStudyData.household?.adultosTrabajar || "No especificado"}</Text>
+        <View style={styles.sectionHeaderLeft}>
+          <View style={styles.iconBadge}>
+            <Ionicons name="document-text" size={22} color="#4CAF50" />
+          </View>
+          <View>
+            <Text style={styles.sectionTitle}>Pre-Estudio Socio-Nutricional</Text>
+            <Text style={styles.sectionSubtitle}>Información preliminar del beneficiario</Text>
+          </View>
         </View>
       </View>
 
-      {/* Situación Alimentaria - COMPLETA */}
-      <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>🍎 Situación Alimentaria</Text>
-        
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Frecuencia de 3 comidas al día:</Text>
-          <Text style={styles.dataValue}>{preStudyData.foodSecurity?.frecuenciaComidas || "No especificado"}</Text>
+      {/* Información del Hogar */}
+      <View style={styles.categorySection}>
+        <Text style={styles.categoryTitle}>🏠 Información del Hogar</Text>
+        <View style={styles.cardGrid}>
+          <InfoCard 
+            icon="people" 
+            label="Total de personas" 
+            value={preStudyData.household?.totalPersonas || "No especificado"}
+            iconColor="#3B82F6"
+          />
+          <InfoCard 
+            icon="happy" 
+            label="Menores de edad" 
+            value={preStudyData.household?.menoresEdad || "No especificado"}
+            iconColor="#8B5CF6"
+          />
+          <InfoCard 
+            icon="briefcase" 
+            label="Adultos trabajando" 
+            value={preStudyData.household?.adultosTrabajar || "No especificado"}
+            iconColor="#F59E0B"
+          />
         </View>
-        
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>¿Se ha quedado sin alimentos por falta de dinero?</Text>
-          <Text style={styles.dataValue}>
-            {preStudyData.foodSecurity?.faltaAlimentos ? "Sí" : "No"}
-          </Text>
-        </View>
-
-        {preStudyData.foodSecurity?.tiposAlimentos?.length > 0 && (
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Tipos de alimentos consumidos:</Text>
-            <Text style={styles.dataValue}>
-              {preStudyData.foodSecurity.tiposAlimentos.join(", ")}
-            </Text>
-          </View>
-        )}
       </View>
 
-      {/* Situación Económica - COMPLETA (si autorizada) */}
-      {preStudyData.economicSituation && (
-        <View style={styles.subsection}>
-          <Text style={styles.subsectionTitle}>💰 Situación Económica</Text>
-          
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Ingreso mensual aproximado:</Text>
-            <Text style={styles.dataValue}>{preStudyData.economicSituation.ingresoMensual}</Text>
-          </View>
-          
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Adultos que trabajan:</Text>
-            <Text style={styles.dataValue}>{preStudyData.economicSituation.adultosTrabajar}</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Condiciones de Salud - COMPLETA (si autorizadas) */}
-      {preStudyData.healthConditions && (
-        <View style={styles.subsection}>
-          <Text style={styles.subsectionTitle}>🏥 Condiciones de Salud</Text>
-          
-          {preStudyData.healthConditions.condicionesSalud?.length > 0 ? (
-            <View style={styles.dataRow}>
-              <Text style={styles.dataLabel}>Condiciones de salud reportadas:</Text>
-              <Text style={styles.dataValue}>
-                {preStudyData.healthConditions.condicionesSalud.join(", ")}
+      {/* Situación Alimentaria */}
+      <View style={styles.categorySection}>
+        <Text style={styles.categoryTitle}>🍎 Situación Alimentaria</Text>
+        <View style={styles.detailsCard}>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Frecuencia de 3 comidas al día</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {preStudyData.foodSecurity?.frecuenciaComidas || "No especificado"}
               </Text>
             </View>
-          ) : (
-            <Text style={styles.noDataText}>No se reportaron condiciones de salud</Text>
-          )}
+          </View>
           
-          {preStudyData.healthConditions.detallesCondiciones && (
-            <View style={styles.dataRow}>
-              <Text style={styles.dataLabel}>Detalles adicionales:</Text>
-              <Text style={styles.dataValue}>{preStudyData.healthConditions.detallesCondiciones}</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Falta de alimentos por falta de dinero</Text>
+            <View style={[styles.statusBadge, preStudyData.foodSecurity?.faltaAlimentos ? styles.statusDanger : styles.statusSuccess]}>
+              <Ionicons 
+                name={preStudyData.foodSecurity?.faltaAlimentos ? "close-circle" : "checkmark-circle"} 
+                size={16} 
+                color="#fff" 
+              />
+              <Text style={styles.statusText}>
+                {preStudyData.foodSecurity?.faltaAlimentos ? "Sí" : "No"}
+              </Text>
+            </View>
+          </View>
+
+          {preStudyData.foodSecurity?.tiposAlimentos?.length > 0 && (
+            <View style={styles.detailRowColumn}>
+              <Text style={styles.detailLabel}>Tipos de alimentos consumidos</Text>
+              <View style={styles.tagsContainer}>
+                {preStudyData.foodSecurity.tiposAlimentos.map((alimento: string, index: number) => (
+                  <View key={index} style={styles.tag}>
+                    <Text style={styles.tagText}>{alimento}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           )}
         </View>
+      </View>
+
+      {/* Situación Económica */}
+      {preStudyData.economicSituation && (
+        <View style={styles.categorySection}>
+          <Text style={styles.categoryTitle}>💰 Situación Económica</Text>
+          <View style={styles.detailsCard}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Ingreso mensual aproximado</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{preStudyData.economicSituation.ingresoMensual}</Text>
+              </View>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Adultos que trabajan</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{preStudyData.economicSituation.adultosTrabajar}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
       )}
 
-      {/* Servicios Básicos - COMPLETA (si autorizados) */}
+      {/* Condiciones de Salud */}
+      {preStudyData.healthConditions && (
+        <View style={styles.categorySection}>
+          <Text style={styles.categoryTitle}>🏥 Condiciones de Salud</Text>
+          <View style={styles.detailsCard}>
+            {preStudyData.healthConditions.condicionesSalud?.length > 0 ? (
+              <View style={styles.detailRowColumn}>
+                <Text style={styles.detailLabel}>Condiciones reportadas</Text>
+                <View style={styles.tagsContainer}>
+                  {preStudyData.healthConditions.condicionesSalud.map((condicion: string, index: number) => (
+                    <View key={index} style={[styles.tag, styles.tagWarning]}>
+                      <Text style={styles.tagText}>{condicion}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.noDataText}>✓ No se reportaron condiciones de salud</Text>
+            )}
+            
+            {preStudyData.healthConditions.detallesCondiciones && (
+              <View style={styles.detailRowColumn}>
+                <Text style={styles.detailLabel}>Detalles adicionales</Text>
+                <Text style={styles.detailValue}>{preStudyData.healthConditions.detallesCondiciones}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Servicios Básicos */}
       {preStudyData.basicServices && preStudyData.basicServices.length > 0 && (
-        <View style={styles.subsection}>
-          <Text style={styles.subsectionTitle}>🏡 Servicios Básicos</Text>
-          
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Servicios con los que cuenta:</Text>
-            <Text style={styles.dataValue}>
-              {preStudyData.basicServices.join(", ")}
-            </Text>
+        <View style={styles.categorySection}>
+          <Text style={styles.categoryTitle}>🏡 Servicios Básicos</Text>
+          <View style={styles.detailsCard}>
+            <View style={styles.tagsContainer}>
+              {preStudyData.basicServices.map((servicio: string, index: number) => (
+                <View key={index} style={[styles.tag, styles.tagInfo]}>
+                  <Ionicons name="checkmark-circle" size={14} color="#3B82F6" />
+                  <Text style={[styles.tagText, { color: "#3B82F6" }]}>{servicio}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
       )}
 
-      {/* Consentimientos - COMPLETA */}
-      {preStudyData.consents && (
-        <View style={styles.subsection}>
-          <Text style={styles.subsectionTitle}>📋 Consentimientos Otorgados</Text>
-          
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Información del Hogar:</Text>
-            <Text style={styles.dataValue}>
-              {preStudyData.consents.householdInfo ? "✅ Autorizado" : "❌ No autorizado"}
-            </Text>
-          </View>
-          
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Situación Alimentaria:</Text>
-            <Text style={styles.dataValue}>
-              {preStudyData.consents.foodSecurity ? "✅ Autorizado" : "❌ No autorizado"}
-            </Text>
-          </View>
-          
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Situación Económica:</Text>
-            <Text style={styles.dataValue}>
-              {preStudyData.consents.incomeData ? "✅ Autorizado" : "❌ No autorizado"}
-            </Text>
-          </View>
-          
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Condiciones de Salud:</Text>
-            <Text style={styles.dataValue}>
-              {preStudyData.consents.healthConditions ? "✅ Autorizado" : "❌ No autorizado"}
-            </Text>
-          </View>
-          
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Servicios Básicos:</Text>
-            <Text style={styles.dataValue}>
-              {preStudyData.consents.servicesInfo ? "✅ Autorizado" : "❌ No autorizado"}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Metadatos - COMPLETA */}
-      <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>📊 Información del Pre-Estudio</Text>
-        
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Estado del pre-estudio:</Text>
-          <Text style={styles.dataValue}>{preStudyData.status || "Pendiente de revisión"}</Text>
-        </View>
-        
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Fecha de consentimiento:</Text>
-          <Text style={styles.dataValue}>
-            {preStudyData.consentTimestamp?.toDate?.().toLocaleDateString('es-MX') || "No disponible"}
-          </Text>
-        </View>
-        
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Fecha de envío:</Text>
-          <Text style={styles.dataValue}>
-            {preStudyData.submittedAt?.toDate?.().toLocaleDateString('es-MX') || "No disponible"}
+      {/* Información del Pre-Estudio */}
+      <View style={styles.metadataCard}>
+        <View style={styles.metadataRow}>
+          <Ionicons name="calendar-outline" size={18} color="#718096" />
+          <Text style={styles.metadataLabel}>Fecha de envío</Text>
+          <Text style={styles.metadataValue}>
+            {preStudyData.submittedAt?.toDate?.().toLocaleDateString('es-MX', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }) || "No disponible"}
           </Text>
         </View>
       </View>
@@ -251,131 +252,159 @@ export default function BeneficiaryStudyScreen({ navigation, route }: any) {
   const renderFullStudyContent = () => (
     <View style={styles.fullStudySection}>
       <View style={styles.sectionHeader}>
-        <Ionicons name="analytics" size={24} color="#E53E3E" />
-        <Text style={styles.sectionTitle}>Estudio Socio-Nutricional Completo</Text>
+        <View style={styles.sectionHeaderLeft}>
+          <View style={[styles.iconBadge, { backgroundColor: "#FEE2E2" }]}>
+            <Ionicons name="analytics" size={22} color="#E53E3E" />
+          </View>
+          <View>
+            <Text style={styles.sectionTitle}>Estudio Socio-Nutricional Completo</Text>
+            <Text style={styles.sectionSubtitle}>Análisis detallado del beneficiario</Text>
+          </View>
+        </View>
       </View>
 
       {/* Información del Hogar Completa */}
-      <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>Información del Hogar</Text>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Total de personas:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.totalPersonas || "No especificado"}</Text>
+      <View style={styles.categorySection}>
+        <Text style={styles.categoryTitle}>🏠 Información del Hogar Completa</Text>
+        <View style={styles.cardGrid}>
+          <InfoCard icon="people" label="Total de personas" value={fullStudyData.totalPersonas || "N/A"} iconColor="#3B82F6" />
+          <InfoCard icon="happy" label="Menores de edad" value={fullStudyData.menoresEdad || "N/A"} iconColor="#8B5CF6" />
+          <InfoCard icon="briefcase" label="Adultos trabajando" value={fullStudyData.adultosTrabajar || "N/A"} iconColor="#F59E0B" />
+          <InfoCard icon="time" label="Adultos mayores" value={fullStudyData.adultosMayores || "N/A"} iconColor="#10B981" />
+          <InfoCard icon="heart" label="Niños < 5 años" value={fullStudyData.niñosMenores5 || "N/A"} iconColor="#EC4899" />
+          <InfoCard 
+            icon="accessibility" 
+            label="Con discapacidad" 
+            value={fullStudyData.personasDiscapacidad ? "Sí" : "No"} 
+            iconColor="#6366F1" 
+          />
         </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Menores de edad:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.menoresEdad || "No especificado"}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Adultos que trabajan:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.adultosTrabajar || "No especificado"}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Adultos mayores:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.adultosMayores || "No especificado"}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Niños menores de 5 años:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.niñosMenores5 || "No especificado"}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Personas con discapacidad:</Text>
-          <Text style={styles.dataValue}>
-            {fullStudyData.personasDiscapacidad ? "Sí" : "No"}
-          </Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Espacio para cocinar:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.espacioCocina || "No especificado"}</Text>
+        
+        <View style={styles.detailsCard}>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Espacio para cocinar</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{fullStudyData.espacioCocina || "No especificado"}</Text>
+            </View>
+          </View>
         </View>
       </View>
 
       {/* Situación Alimentaria Completa */}
-      <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>Situación Alimentaria</Text>
-        {fullStudyData.tiposAlimentos?.length > 0 && (
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Alimentos consumidos:</Text>
-            <Text style={styles.dataValue}>
-              {fullStudyData.tiposAlimentos.join(", ")}
-            </Text>
+      <View style={styles.categorySection}>
+        <Text style={styles.categoryTitle}>🍎 Análisis Alimentario Detallado</Text>
+        <View style={styles.detailsCard}>
+          {fullStudyData.tiposAlimentos?.length > 0 && (
+            <View style={styles.detailRowColumn}>
+              <Text style={styles.detailLabel}>Alimentos consumidos regularmente</Text>
+              <View style={styles.tagsContainer}>
+                {fullStudyData.tiposAlimentos.map((alimento: string, index: number) => (
+                  <View key={index} style={styles.tag}>
+                    <Text style={styles.tagText}>{alimento}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Consumo de proteínas</Text>
+            <View style={styles.badge}><Text style={styles.badgeText}>{fullStudyData.consumoProteínas || "N/A"}</Text></View>
           </View>
-        )}
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Consumo de proteínas:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.consumoProteínas || "No especificado"}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Consumo de fibra:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.consumoFibra || "No especificado"}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Ultraprocesados:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.ultraprocesados || "No especificado"}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Dormir con hambre:</Text>
-          <Text style={styles.dataValue}>
-            {fullStudyData.dormirConHambre ? "Sí" : "No"}
-          </Text>
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Consumo de fibra</Text>
+            <View style={styles.badge}><Text style={styles.badgeText}>{fullStudyData.consumoFibra || "N/A"}</Text></View>
+          </View>
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Ultraprocesados</Text>
+            <View style={styles.badge}><Text style={styles.badgeText}>{fullStudyData.ultraprocesados || "N/A"}</Text></View>
+          </View>
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>¿Duerme con hambre?</Text>
+            <View style={[styles.statusBadge, fullStudyData.dormirConHambre ? styles.statusDanger : styles.statusSuccess]}>
+              <Ionicons name={fullStudyData.dormirConHambre ? "alert-circle" : "checkmark-circle"} size={16} color="#fff" />
+              <Text style={styles.statusText}>{fullStudyData.dormirConHambre ? "Sí" : "No"}</Text>
+            </View>
+          </View>
         </View>
       </View>
 
       {/* Salud y Condiciones Médicas */}
-      <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>Salud y Condiciones Médicas</Text>
-        {fullStudyData.condicionesSalud?.length > 0 ? (
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Condiciones de salud:</Text>
-            <Text style={styles.dataValue}>
-              {fullStudyData.condicionesSalud.join(", ")}
-            </Text>
-          </View>
-        ) : (
-          <Text style={styles.noDataText}>No se reportaron condiciones de salud</Text>
-        )}
-        {fullStudyData.dietaEspecial && (
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Dieta especial:</Text>
-            <Text style={styles.dataValue}>{fullStudyData.dietaEspecial}</Text>
-          </View>
-        )}
-        {fullStudyData.hospitalizacionesNutricion && (
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Hospitalizaciones:</Text>
-            <Text style={styles.dataValue}>{fullStudyData.hospitalizacionesNutricion}</Text>
-          </View>
-        )}
+      <View style={styles.categorySection}>
+        <Text style={styles.categoryTitle}>🏥 Salud y Condiciones Médicas</Text>
+        <View style={styles.detailsCard}>
+          {fullStudyData.condicionesSalud?.length > 0 ? (
+            <View style={styles.detailRowColumn}>
+              <Text style={styles.detailLabel}>Condiciones de salud reportadas</Text>
+              <View style={styles.tagsContainer}>
+                {fullStudyData.condicionesSalud.map((condicion: string, index: number) => (
+                  <View key={index} style={[styles.tag, styles.tagWarning]}>
+                    <Text style={styles.tagText}>{condicion}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.noDataText}>✓ No se reportaron condiciones de salud</Text>
+          )}
+          
+          {fullStudyData.dietaEspecial && (
+            <View style={styles.detailRowColumn}>
+              <Text style={styles.detailLabel}>Dieta especial requerida</Text>
+              <Text style={styles.detailValue}>{fullStudyData.dietaEspecial}</Text>
+            </View>
+          )}
+          
+          {fullStudyData.hospitalizacionesNutricion && (
+            <View style={styles.detailRowColumn}>
+              <Text style={styles.detailLabel}>Hospitalizaciones relacionadas con nutrición</Text>
+              <Text style={styles.detailValue}>{fullStudyData.hospitalizacionesNutricion}</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Situación Económica */}
-      <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>Situación Económica</Text>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Ingreso mensual:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.ingresoMensual || "No especificado"}</Text>
-        </View>
-        {fullStudyData.serviciosBasicos?.length > 0 && (
-          <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Servicios básicos:</Text>
-            <Text style={styles.dataValue}>
-              {fullStudyData.serviciosBasicos.join(", ")}
-            </Text>
+      <View style={styles.categorySection}>
+        <Text style={styles.categoryTitle}>💰 Situación Económica</Text>
+        <View style={styles.detailsCard}>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Ingreso mensual familiar</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{fullStudyData.ingresoMensual || "N/A"}</Text>
+            </View>
           </View>
-        )}
+          
+          {fullStudyData.serviciosBasicos?.length > 0 && (
+            <View style={styles.detailRowColumn}>
+              <Text style={styles.detailLabel}>Servicios básicos disponibles</Text>
+              <View style={styles.tagsContainer}>
+                {fullStudyData.serviciosBasicos.map((servicio: string, index: number) => (
+                  <View key={index} style={[styles.tag, styles.tagInfo]}>
+                    <Ionicons name="checkmark-circle" size={14} color="#3B82F6" />
+                    <Text style={[styles.tagText, { color: "#3B82F6" }]}>{servicio}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Metadatos */}
-      <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>Información del Estudio</Text>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Estado:</Text>
-          <Text style={styles.dataValue}>{fullStudyData.status || "Completado"}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Fecha de envío:</Text>
-          <Text style={styles.dataValue}>
-            {fullStudyData.submittedAt?.toDate?.().toLocaleDateString('es-MX') || "No disponible"}
+      <View style={styles.metadataCard}>
+        <View style={styles.metadataRow}>
+          <Ionicons name="calendar-outline" size={18} color="#718096" />
+          <Text style={styles.metadataLabel}>Fecha de registro</Text>
+          <Text style={styles.metadataValue}>
+            {fullStudyData.submittedAt?.toDate?.().toLocaleDateString('es-MX', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }) || "No disponible"}
           </Text>
         </View>
       </View>
@@ -393,9 +422,10 @@ export default function BeneficiaryStudyScreen({ navigation, route }: any) {
           <Ionicons name="arrow-back" size={24} color="#E53E3E" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>
-          {beneficiaryName ? `Estudios - ${beneficiaryName}` : 'Estudios del Beneficiario'}
-        </Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>Estudios del Beneficiario</Text>
+          {beneficiaryName && <Text style={styles.headerSubtitle}>{beneficiaryName}</Text>}
+        </View>
         
         <View style={styles.placeholder} />
       </View>
@@ -403,52 +433,40 @@ export default function BeneficiaryStudyScreen({ navigation, route }: any) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {!preStudyData && !hasFullStudy ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="document-text-outline" size={64} color="#CBD5E0" />
-            <Text style={styles.emptyText}>No se encontraron estudios</Text>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="document-text-outline" size={64} color="#CBD5E0" />
+            </View>
+            <Text style={styles.emptyText}>Sin estudios registrados</Text>
             <Text style={styles.emptySubtext}>
-              Este beneficiario no tiene estudios socio-nutricionales registrados
+              Este beneficiario aún no ha completado ningún estudio socio-nutricional
             </Text>
-            
           </View>
         ) : (
           <View style={styles.studyCard}>
-            {/* Pre-Estudio COMPLETO */}
+            {/* Pre-Estudio */}
             {preStudyData && renderPreStudyContent()}
 
-            {/* Botón para ver/crear estudio completo */}
-            <View style={styles.actionSection}>
-              {hasFullStudy ? (
-                <>
-                  <Text style={styles.actionTitle}>🎯 Estudio Completo Disponible</Text>
-                  <Text style={styles.actionSubtitle}>
-                    Este beneficiario ya tiene un estudio socio-nutricional completo registrado.
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.actionTitle}>📝 Estudio Completo Pendiente</Text>
-                  <Text style={styles.actionSubtitle}>
-                    Complete el estudio socio-nutricional detallado para este beneficiario.
-                  </Text>
-                </>
-              )}
-
-              <TouchableOpacity
-                style={styles.fullStudyButton}
-                onPress={() => navigation.navigate("SocioNutritionalForm", { 
-                  beneficiaryId: beneficiaryId,
-                  beneficiaryName: beneficiaryName 
-                })}
-              >
+            {/* Estado del Estudio Completo */}
+            <View style={[styles.statusCard, hasFullStudy ? styles.statusCardSuccess : styles.statusCardPending]}>
+              <View style={styles.statusCardHeader}>
                 <Ionicons 
-                  name={hasFullStudy ? "eye-outline" : "add-circle-outline"} 
-                  size={20} 
-                  color="#fff" 
+                  name={hasFullStudy ? "checkmark-circle" : "time-outline"} 
+                  size={32} 
+                  color={hasFullStudy ? "#10B981" : "#F59E0B"} 
                 />
-                <Text style={styles.fullStudyButtonText}>
-                  {"Ver Estudio Completo"}
-                </Text>
-              </TouchableOpacity>
+                <View style={styles.statusCardContent}>
+                  <Text style={styles.statusCardTitle}>
+                    {hasFullStudy ? "Estudio Completo Realizado" : "Estudio Completo Pendiente"}
+                  </Text>
+                  <Text style={styles.statusCardSubtitle}>
+                    {hasFullStudy 
+                      ? "El beneficiario ha completado su estudio socio-nutricional detallado"
+                      : "El beneficiario aún no ha completado el estudio socio-nutricional detallado"
+                    }
+                  </Text>
+                </View>
+              </View>
+              
             </View>
 
             {/* Mostrar datos del estudio completo si existen */}
@@ -463,7 +481,7 @@ export default function BeneficiaryStudyScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F9FAFB",
   },
   centered: {
     justifyContent: "center",
@@ -474,6 +492,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: "#6B7280",
+    fontWeight: "500",
   },
   header: {
     flexDirection: "row",
@@ -485,164 +504,335 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   headerBackButton: {
     padding: 5,
   },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    color: "#1F2937",
+  },
+  headerSubtitle: {
+    fontSize: 14,
     color: "#E53E3E",
-    textAlign: "center",
-    flex: 1,
+    fontWeight: "600",
+    marginTop: 2,
   },
   placeholder: {
     width: 34,
   },
   content: {
-    padding: 20,
+    padding: 16,
     paddingBottom: 40,
   },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 60,
+    paddingHorizontal: 20,
   },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#4A5568",
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#718096",
-    marginTop: 8,
-    textAlign: "center",
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
-  studyCard: {
-    backgroundColor: "#F7FAFC",
+  emptyText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 15,
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  emptyInfoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    padding: 16,
     borderRadius: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  emptyInfoText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#1E40AF",
+    lineHeight: 20,
+  },
+  studyCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
     padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   section: {
     marginBottom: 24,
   },
   fullStudySection: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 2,
-    borderTopColor: "#E53E3E",
+    marginTop: 24,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
   },
   sectionHeader: {
+    marginBottom: 20,
+  },
+  sectionHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
-    paddingBottom: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: "#E2E8F0",
+    gap: 12,
+  },
+  iconBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#D1FAE5",
+    justifyContent: "center",
+    alignItems: "center",
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2D3748",
-    marginLeft: 8,
+    color: "#1F2937",
   },
-  subsection: {
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+  categorySection: {
     marginBottom: 20,
-    padding: 16,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#4CAF50",
   },
-  subsectionTitle: {
+  categoryTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#2D3748",
+    color: "#374151",
     marginBottom: 12,
   },
-  dataRow: {
+  cardGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 12,
+  },
+  infoCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F9FAFB",
+    padding: 12,
+    borderRadius: 12,
+    flex: 1,
+    minWidth: "47%",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  infoIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#1F2937",
+  },
+  detailsCard: {
+    backgroundColor: "#F9FAFB",
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-    paddingVertical: 4,
+    alignItems: "center",
   },
-  dataLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#4A5568",
-    flex: 1,
+  detailRowColumn: {
+    gap: 8,
   },
-  dataValue: {
+  detailLabel: {
     fontSize: 14,
-    color: "#2D3748",
     fontWeight: "500",
+    color: "#4B5563",
     flex: 1,
-    textAlign: "right",
+  },
+  detailValue: {
+    fontSize: 14,
+    color: "#1F2937",
+    lineHeight: 20,
+  },
+  badge: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  badgeText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  statusSuccess: {
+    backgroundColor: "#10B981",
+  },
+  statusDanger: {
+    backgroundColor: "#EF4444",
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  tag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#D1FAE5",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  tagInfo: {
+    backgroundColor: "#DBEAFE",
+  },
+  tagWarning: {
+    backgroundColor: "#FEF3C7",
+  },
+  tagText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#065F46",
   },
   noDataText: {
     fontSize: 14,
-    color: "#718096",
+    color: "#10B981",
     fontStyle: "italic",
     textAlign: "center",
-    marginVertical: 8,
+    paddingVertical: 8,
   },
-  // Estilos para la sección de acciones
-  actionSection: {
-    backgroundColor: "rgba(229, 62, 62, 0.05)",
-    padding: 20,
-    borderRadius: 8,
+  metadataCard: {
+    backgroundColor: "#F9FAFB",
+    padding: 14,
+    borderRadius: 12,
+    marginTop: 8,
     borderWidth: 1,
-    borderColor: "rgba(229, 62, 62, 0.2)",
-    alignItems: "center",
-    marginBottom: 20,
+    borderColor: "#E5E7EB",
   },
-  actionTitle: {
+  metadataRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  metadataLabel: {
+    fontSize: 13,
+    color: "#6B7280",
+    flex: 1,
+  },
+  metadataValue: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  statusCard: {
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+    borderWidth: 2,
+  },
+  statusCardSuccess: {
+    backgroundColor: "#ECFDF5",
+    borderColor: "#10B981",
+  },
+  statusCardPending: {
+    backgroundColor: "#FFFBEB",
+    borderColor: "#F59E0B",
+  },
+  statusCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  statusCardContent: {
+    flex: 1,
+  },
+  statusCardTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#E53E3E",
+    color: "#1F2937",
     marginBottom: 4,
-    textAlign: "center",
   },
-  actionSubtitle: {
+  statusCardSubtitle: {
     fontSize: 14,
-    color: "#718096",
-    textAlign: "center",
-    marginBottom: 16,
+    color: "#4B5563",
+    lineHeight: 20,
   },
-  fullStudyButton: {
+  statusCardNote: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#E53E3E",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-    width: "100%",
-  },
-  fullStudyButtonText: {
-    fontSize: 16,
-    color: "#fff",
-    fontWeight: "600",
-  },
-  createStudyButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#E53E3E",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
     gap: 8,
     marginTop: 16,
+    padding: 12,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
   },
-  createStudyButtonText: {
-    fontSize: 16,
-    color: "#fff",
-    fontWeight: "600",
+  statusCardNoteText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#92400E",
+    lineHeight: 18,
   },
 });

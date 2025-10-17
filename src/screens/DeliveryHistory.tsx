@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { db } from "./firebaseconfig";
+import { db, auth } from "./firebaseconfig"; 
 
 interface Delivery {
   id: string;
@@ -24,10 +24,13 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const filters = ["Todas", "Completada", "Programada", "Cancelada"];
+  const currentUser = auth.currentUser;
 
   useEffect(() => {
-    loadDeliveries();
-  }, []);
+    if (currentUser) {
+      loadDeliveries();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     filterDeliveries();
@@ -36,8 +39,16 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   const loadDeliveries = async () => {
     try {
       setLoading(true);
+      
+      if (!currentUser) {
+        console.error("No hay usuario logeado");
+        setDeliveries([]);
+        return;
+      }
+
       const q = query(
         collection(db, "scheduledDeliveries"),
+        where("volunteers", "array-contains", currentUser.uid), 
         orderBy("deliveryDate", "desc")
       );
 
@@ -50,8 +61,36 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
       setDeliveries(deliveriesData);
     } catch (error) {
       console.error("Error cargando entregas:", error);
+      // Si falla la consulta con array-contains, intentar cargar todas y filtrar después
+      loadAllDeliveriesAndFilter();
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Método alternativo si falla la consulta con array-contains
+  const loadAllDeliveriesAndFilter = async () => {
+    try {
+      const q = query(
+        collection(db, "scheduledDeliveries"),
+        orderBy("deliveryDate", "desc")
+      );
+
+      const snapshot = await getDocs(q);
+      const allDeliveries = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Delivery));
+
+      // Filtrar entregas donde el usuario actual es voluntario
+      const userDeliveries = allDeliveries.filter(delivery => 
+        delivery.volunteers.some(volunteer => volunteer.id === currentUser?.uid)
+      );
+
+      setDeliveries(userDeliveries);
+    } catch (error) {
+      console.error("Error cargando todas las entregas:", error);
+      setDeliveries([]);
     }
   };
 
@@ -63,6 +102,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
     }
   };
 
+  // Resto del código permanece igual...
   const formatDate = (timestamp: any) => {
     const date = timestamp.toDate();
     return date.toLocaleDateString('es-MX', {
@@ -198,7 +238,10 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                 {selectedDelivery.volunteers.map((volunteer) => (
                   <View key={volunteer.id} style={styles.volunteerDetailCard}>
                     <Ionicons name="person-circle" size={32} color="#4CAF50" />
-                    <Text style={styles.volunteerDetailName}>{volunteer.name}</Text>
+                    <Text style={styles.volunteerDetailName}>
+                      {volunteer.name}
+                      {volunteer.id === currentUser?.uid && " (Tú)"}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -234,10 +277,18 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
     );
   };
 
+  if (!currentUser) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>No hay usuario logeado</Text>
+      </View>
+    );
+  }
+
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loadingText}>Cargando historial...</Text>
+        <Text style={styles.loadingText}>Cargando tus entregas...</Text>
       </View>
     );
   }
@@ -254,7 +305,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#E53E3E" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Historial de Entregas</Text>
+          <Text style={styles.headerTitle}>Mis Entregas</Text>
           <View style={{ width: 24 }} />
         </View>
       </ImageBackground>
@@ -263,7 +314,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{deliveries.length}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+          <Text style={styles.statLabel}>Mis Entregas</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={[styles.statValue, { color: "#4CAF50" }]}>
@@ -311,7 +362,10 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
           <View style={styles.emptyState}>
             <Ionicons name="archive-outline" size={64} color="#E2E8F0" />
             <Text style={styles.emptyStateText}>
-              No hay entregas {selectedFilter !== "Todas" ? `con estado "${selectedFilter}"` : ""}
+              {selectedFilter === "Todas" 
+                ? "No tienes entregas asignadas" 
+                : `No tienes entregas ${selectedFilter.toLowerCase()}`
+              }
             </Text>
           </View>
         ) : (
@@ -365,6 +419,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   );
 }
 
+// Los estilos permanecen iguales...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
