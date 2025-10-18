@@ -224,7 +224,7 @@ export default function StaffDashboard({ navigation }: any) {
               <TouchableOpacity
                 key={delivery.id}
                 style={styles.todayDeliveryCard}
-                onPress={() => navigation.navigate("DeliveryDetails", { deliveryId: delivery.id })}
+                onPress={() => navigation.navigate("StaffDelivery", { delivery })}
               >
                 <View style={styles.todayDeliveryHeader}>
                   <View style={styles.todayDeliveryTime}>
@@ -262,7 +262,7 @@ export default function StaffDashboard({ navigation }: any) {
               <TouchableOpacity
                 key={delivery.id}
                 style={styles.deliveryCard}
-                onPress={() => navigation.navigate("DeliveryDetails", { deliveryId: delivery.id })}
+                onPress={() => navigation.navigate("StaffDelivery", { delivery })}
               >
                 <View style={styles.deliveryDateBadge}>
                   <Text style={styles.deliveryDateText}>
@@ -314,7 +314,7 @@ export default function StaffDashboard({ navigation }: any) {
 
           <TouchableOpacity
             style={styles.actionCard}
-            onPress={() => navigation.navigate("BeneficiariesList")}
+            onPress={() => navigation.navigate("StaffBeneficiariesList")}
           >
             <View style={[styles.actionIcon, { backgroundColor: '#E3F2FD' }]}>
               <Ionicons name="people" size={24} color="#2196F3" />
