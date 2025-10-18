@@ -300,20 +300,6 @@ export default function StaffDashboard({ navigation }: any) {
 
           <TouchableOpacity
             style={styles.actionCard}
-            onPress={() => navigation.navigate("AssignedCommunities")}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#E8F5E9' }]}>
-              <Ionicons name="map" size={24} color="#4CAF50" />
-            </View>
-            <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Mis comunidades</Text>
-              <Text style={styles.actionSubtitle}>Ver comunidades asignadas</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionCard}
             onPress={() => navigation.navigate("StaffBeneficiariesList")}
           >
             <View style={[styles.actionIcon, { backgroundColor: '#E3F2FD' }]}>
@@ -336,20 +322,6 @@ export default function StaffDashboard({ navigation }: any) {
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>Historial de entregas</Text>
               <Text style={styles.actionSubtitle}>Ver entregas completadas</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => navigation.navigate("SocioEconomicSurvey")}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#FFEBEE' }]}>
-              <Ionicons name="clipboard" size={24} color="#E53E3E" />
-            </View>
-            <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Estudio socioeconómico</Text>
-              <Text style={styles.actionSubtitle}>Realizar cuestionario completo</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
           </TouchableOpacity>
