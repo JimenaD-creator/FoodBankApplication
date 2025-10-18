@@ -186,7 +186,16 @@ export default function DeliveryManagementScreen({ navigation }: any) {
                         user.community.trim().toLowerCase() === communityName.trim().toLowerCase()
                     );
 
+                     const communityVolunteers = usersData.filter(
+                      (user) =>
+                        user.role === "staff" &&
+                        user.community &&
+                        user.community.trim().toLowerCase() === communityName.trim().toLowerCase()
+                    );
+
                     setBeneficiaries(communityBeneficiaries);
+                    setVolunteers(communityVolunteers.map((v) => ({ ...v, selected: false })));
+      
                     console.log(
                       `Beneficiarios vinculados con comunidad ${communityName}:`,
                       communityBeneficiaries.length
@@ -196,6 +205,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
                   }
                 } else {
                   setBeneficiaries([]);
+                  setVolunteers([]);
                 }
               }}
               style={styles.picker}

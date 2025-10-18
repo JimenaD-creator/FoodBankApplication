@@ -367,6 +367,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    
   },
   backButton: { 
     width: 40,
@@ -381,7 +391,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: { 
-    fontSize: 24, 
+    fontSize: 20, 
     fontWeight: "bold", 
     color: "red",
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
@@ -407,6 +417,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 20,
     gap: 10,
+    marginTop: 10,
   },
   statCard: {
     flex: 1,
