@@ -27,6 +27,9 @@ import UnauthorizedScreen from './src/screens/UnauthorizedScreen';
 import DeliveryListScreen from './src/screens/Admin/DeliveriesList';
 import DeliveryHistoryScreen from './src/screens/DeliveryHistory';
 import DeliveryAssistanceScreen from './src/screens/Admin/BeneficiaryAttendance';
+import StaffBeneficiariesList from './src/screens/Volunteer/StaffBeneficiariesList';
+import StaffDelivery from './src/screens/Volunteer/StaffDelivery';
+import ScannerQR from './src/screens/Volunteer/ScannerQR';
 import BeneficiaryStudyScreen from './src/screens/Admin/BeneficiaryStudyScreen';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { startFormSyncListener } from './src/services/syncService';
@@ -128,6 +131,9 @@ export default function App() {
             <Stack.Screen name="BeneficiaryStudyScreen" component={BeneficiaryStudyScreen}/>
             <Stack.Screen name="Unauthorized" component={UnauthorizedScreen} />
             <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} />
+            <Stack.Screen name = "StaffBeneficiariesList" component={StaffBeneficiariesList} />
+            <Stack.Screen name = "StaffDelivery" component={StaffDelivery} />
+            <Stack.Screen name = "ScannerQR" component={ScannerQR} />
             
           </>
         )}
