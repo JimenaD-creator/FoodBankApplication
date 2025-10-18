@@ -2,6 +2,8 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { collection, getDocs, onSnapshot, query, where } from "firebase/firestore";
+import {db} from '../firebaseconfig';
 import { useSecureScreen } from '../../hooks/useSecureScreen'
 
 export default function AdminDashboard({ navigation }: any) {
@@ -11,14 +13,62 @@ export default function AdminDashboard({ navigation }: any) {
   const [communitiesCount, setCommunitiesCount] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDeliveriesCount ((prev) => prev + 1);
-      setBeneficiariesCount((prev) => prev+2);
-      setVolunteersCount((prev) => prev+1);
-      setCommunitiesCount(5);
-    }, 2000)
+    const unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      const allUsers = snapshot.docs.map(doc => doc.data());
+    setBeneficiariesCount(allUsers.filter(u => u.role === "beneficiary").length);
+    setVolunteersCount(allUsers.filter(u => u.role === "staff").length);
+  });
 
-    return() => clearInterval(interval);
+ const unsubscribeDeliveries = onSnapshot(collection(db, "scheduledDeliveries"), async (snapshot) => {
+  try {
+    console.log("=== CÁLCULO COMO EN LISTA DE ENTREGAS ===");
+    
+    // Obtener todas las entregas programadas
+    const scheduledDeliveriesRef = collection(db, 'scheduledDeliveries');
+    const scheduledSnapshot = await getDocs(scheduledDeliveriesRef);
+
+    // Obtener todos los beneficiarios
+    const usersRef = collection(db, 'users');
+    const beneficiariesQuery = query(usersRef, where('role', '==', 'beneficiary'));
+    const beneficiariesSnapshot = await getDocs(beneficiariesQuery);
+
+    // Crear mapa de beneficiarios
+    const beneficiariesMap: any = {};
+    beneficiariesSnapshot.forEach(doc => {
+      beneficiariesMap[doc.id] = { id: doc.id, ...doc.data() };
+    });
+
+    let totalDespensasIndividuales = 0;
+
+    scheduledSnapshot.forEach(doc => {
+      const delivery = doc.data();
+
+      // Encontrar beneficiarios que coincidan con la comunidad de la entrega
+      const matchingBeneficiaries = Object.values(beneficiariesMap).filter(
+        (b: any) => b.community?.toLowerCase?.() === delivery.communityName?.toLowerCase?.()
+      );
+
+      // Cada beneficiario coincidente representa 1 despensa individual
+      totalDespensasIndividuales += matchingBeneficiaries.length;
+    });
+
+    console.log("🚚 TOTAL DE DESPENSAS INDIVIDUALES:", totalDespensasIndividuales);
+    setDeliveriesCount(totalDespensasIndividuales);
+
+  } catch (error) {
+    console.error("Error calculando despensas:", error);
+  }
+});
+
+  const unsubscribeCommunities = onSnapshot(collection(db, "communities"), (snapshot) => {
+    setCommunitiesCount(snapshot.size);
+  });
+
+  return () => {
+    unsubscribeUsers();
+    unsubscribeDeliveries();
+    unsubscribeCommunities();
+  };
     
   }, [])
 
@@ -73,21 +123,30 @@ export default function AdminDashboard({ navigation }: any) {
               <Text style={styles.cardLabel}>Beneficiarios</Text>
             </TouchableOpacity>
 
-            <View style={[styles.card, styles.deliveriesCard]}>
+           <TouchableOpacity
+            style={[styles.card, styles.deliveriesCard]}
+              onPress={() => navigation.navigate("DeliveriesList")}
+           >
               <View style={styles.cardIcon}>
                 <Ionicons name="cube" size={32} color="#2196F3" />
               </View>
               <Text style={styles.cardValue}>{deliveriesCount}</Text>
               <Text style={styles.cardLabel}>Despensas</Text>
-            </View>
+              </TouchableOpacity>
+            
+            
+          <TouchableOpacity
+              style={[styles.card, styles.staffCard]}
+              onPress={() => navigation.navigate("StaffList")}
 
-            <View style={[styles.card, styles.staffCard]}>
+          >
               <View style={styles.cardIcon}>
                 <Ionicons name="person" size={32} color="#FF9800" />
               </View>
               <Text style={styles.cardValue}>{volunteersCount}</Text>
               <Text style={styles.cardLabel}>Staff activo</Text>
-            </View>
+          
+          </TouchableOpacity>
 
            <TouchableOpacity
            style={[styles.card, styles.communitiesCard]}

@@ -14,8 +14,16 @@ export default function DeliveryManagementScreen({ navigation }: any) {
   const [standardTemplate, setStandardTemplate] = useState<any>(null);
 
   const [communities, setCommunities] = useState<any[]>([]);
+  const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
   const [volunteers, setVolunteers] = useState<any[]>([]);
   
+  // Función para generar ID único compatible con React Native
+  const generateUniqueId = () => {
+    const timestamp = Date.now().toString(36);
+    const randomPart = Math.random().toString(36).substring(2, 15);
+    return `qr_${timestamp}_${randomPart}`;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -66,19 +74,30 @@ export default function DeliveryManagementScreen({ navigation }: any) {
       Alert.alert("Error", "Debes asignar al menos un voluntario");
       return;
     }
+    
     if (!standardTemplate || Object.keys(standardTemplate).length === 0) {
-    Alert.alert("Error", "No se ha cargado la plantilla estándar. Intenta de nuevo.");
-    console.log("standardTemplate es null o vacío:", standardTemplate);
-    return;
-  }
+      Alert.alert("Error", "No se ha cargado la plantilla estándar. Intenta de nuevo.");
+      console.log("standardTemplate es null o vacío:", standardTemplate);
+      return;
+    }
 
-  console.log("Guardando con productos:", standardTemplate);
-  console.log("Número de productos:", Object.keys(standardTemplate).length);
+    console.log("Guardando con productos:", standardTemplate);
+    console.log("Número de productos:", Object.keys(standardTemplate).length);
 
     try {
       const selectedCommunityData = communities.find(c => c.id === selectedCommunity);
       
-      await addDoc(collection(db, "scheduledDeliveries"), {
+      //Generar QR único para cada beneficiario
+      const beneficiariesWithQR = beneficiaries.map((b) => ({
+        id: b.id,
+        name: b.nombre || b.fullName,
+        qrCode: generateUniqueId(),
+        redeemed: false,
+      }));
+
+      console.log("📝 Guardando entrega con beneficiarios:", beneficiariesWithQR);
+
+      const deliveryRef = await addDoc(collection(db, "scheduledDeliveries"), {
         communityId: selectedCommunity,
         communityName: selectedCommunityData?.nombre || "",
         municipio: selectedCommunityData?.municipio || "",
@@ -88,10 +107,15 @@ export default function DeliveryManagementScreen({ navigation }: any) {
           id: v.id,
           name: v.fullName || v.name,
         })),
+        beneficiaries: beneficiariesWithQR,
         products: standardTemplate,
         status: "Programada",
         createdAt: new Date(),
       });
+
+      console.log("✅ Entrega guardada con ID:", deliveryRef.id);
+      console.log("👥 Beneficiarios incluidos:", beneficiariesWithQR.length);
+      console.log("📦 Productos incluidos:", Object.keys(standardTemplate).length);
 
       Alert.alert("Éxito", "Entrega programada correctamente", [
         { text: "OK", onPress: () => navigation.goBack() }
@@ -138,7 +162,42 @@ export default function DeliveryManagementScreen({ navigation }: any) {
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedCommunity}
-              onValueChange={(itemValue) => setSelectedCommunity(itemValue)}
+              onValueChange={async (itemValue) => {
+                setSelectedCommunity(itemValue);
+
+                if (itemValue) {
+                  try {
+                    // Obtener datos de la comunidad seleccionada
+                    const selectedCommunityData = communities.find((c) => c.id === itemValue);
+                    const communityName = selectedCommunityData?.nombre;
+
+                    // Cargar todos los usuarios
+                    const usersSnapshot = await getDocs(collection(db, "users"));
+                    const usersData = usersSnapshot.docs.map((doc) => ({
+                      id: doc.id,
+                      ...doc.data(),
+                    }));
+
+                    // Filtrar solo beneficiarios con esa comunidad por nombre
+                    const communityBeneficiaries = usersData.filter(
+                      (user) =>
+                        user.role === "beneficiary" &&
+                        user.community &&
+                        user.community.trim().toLowerCase() === communityName.trim().toLowerCase()
+                    );
+
+                    setBeneficiaries(communityBeneficiaries);
+                    console.log(
+                      `Beneficiarios vinculados con comunidad ${communityName}:`,
+                      communityBeneficiaries.length
+                    );
+                  } catch (error) {
+                    console.error("Error al cargar beneficiarios:", error);
+                  }
+                } else {
+                  setBeneficiaries([]);
+                }
+              }}
               style={styles.picker}
             >
               <Picker.Item label="Selecciona una comunidad" value="" />
@@ -164,6 +223,11 @@ export default function DeliveryManagementScreen({ navigation }: any) {
                 <Ionicons name="people" size={18} color="#4CAF50" />
                 <Text style={styles.communityInfoLabel}>Familias:</Text>
                 <Text style={styles.communityInfoValue}>{selectedCommunityData.familias}</Text>
+              </View>
+              <View style={styles.communityInfoRow}>
+                <Ionicons name="person" size={18} color="#4CAF50" />
+                <Text style={styles.communityInfoLabel}>Beneficiarios:</Text>
+                <Text style={styles.communityInfoValue}>{beneficiaries.length}</Text>
               </View>
             </View>
           )}

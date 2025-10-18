@@ -1,13 +1,19 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ImageBackground, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
 import { auth, db } from './firebaseconfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { getDoc, doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { Ionicons } from '@expo/vector-icons';
 import { hasAcceptedPrivacyPolicy } from '../services/privacyService';
+
+// Servicio de tokens seguro
+import { TokenService } from '../services/secureTokenService';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -15,31 +21,38 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
 
+    setLoading(true);
+    
     try {
-      // Autenticar usuario
+      // 1. Hacer login
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Obtener datos del usuario
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-
+      // 2. Obtener datos del usuario
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      
       if (!userDoc.exists()) {
         Alert.alert("Error", "Datos de usuario no encontrados");
+        setLoading(false);
         return;
       }
 
       const userData = userDoc.data();
-      const userRole = userData.role;
+      
+      // 3. Guardar tokens de forma segura (sin mostrar modal)
+      const firebaseToken = await user.getIdToken();
+      await TokenService.saveTokens(firebaseToken, `refresh_token_${user.uid}`);
+      
+      console.log('✅ Login exitoso - Usuario:', user.email, 'Rol:', userData.role);
 
-      switch (userRole) {
+      // 4. Redirigir directamente según el rol
+      switch (userData.role) {
         case 'admin':
-          navigation.replace("AdminDashboard");
+          navigation.replace('AdminDashboard');
           break;
-
         case 'staff':
-          navigation.replace("StaffDashboard");
+          navigation.replace('StaffDashboard');
           break;
-
         case 'beneficiary':
           // Revisar si aceptó la política de privacidad usando UID
           const accepted = await hasAcceptedPrivacyPolicy(user.uid);
@@ -52,15 +65,30 @@ export default function LoginScreen({ navigation }: any) {
             });
           }
           break;
-
         default:
-          Alert.alert("Error", "Rol de usuario no reconocido");
+          Alert.alert("Error", "Rol de usuario no reconocido: " + userData.role);
+          setLoading(false);
+          return;
       }
 
     } catch (error: any) {
-      Alert.alert("Error: ", error.message);
+      console.error('❌ Error en login:', error);
+      let errorMessage = "Error al iniciar sesión";
+      
+      if (error.code === 'auth/invalid-email') {
+        errorMessage = "Email inválido";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = "Usuario no encontrado";
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = "Contraseña incorrecta";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Error de conexión";
+      }
+      
+      Alert.alert("Error", errorMessage);
+      setLoading(false);
     }
-  };
+  }
 
   return (
     <ImageBackground
@@ -69,8 +97,6 @@ export default function LoginScreen({ navigation }: any) {
       resizeMode="cover"
     >
       <View style={styles.overlay} />
-
-      {/* Logo */}
       <View style={styles.logoContainer}>
         <Image 
           source={require('../../assets/logo_no_background.png')} 
@@ -79,41 +105,66 @@ export default function LoginScreen({ navigation }: any) {
         />
       </View>
 
-      {/* Formulario */}
       <View style={styles.formContainer}>
         <View style={styles.pinkContainer}>
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Correo</Text>
-            <TextInput
-              style={styles.input}
-              placeholder=" "
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="mail-outline" size={20} color="#718096" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder=" "
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+                editable={!loading}
+              />
+            </View>
           </View>
 
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder=" "
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed-outline" size={20} color="#718096" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder=" "
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!loading}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="#718096"
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          <TouchableOpacity 
+            style={[styles.button, loading && styles.buttonDisabled]} 
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Iniciar Sesión</Text>
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
+          <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} disabled={loading}>
             <Text style={styles.forgotPassword}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
+          <TouchableOpacity onPress={() => navigation.navigate("Profile")} disabled={loading}>
             <Text style={styles.signUp}>
               ¿No tienes cuenta? <Text style={styles.signUpLink}>Regístrate</Text>
             </Text>
@@ -172,14 +223,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   input: {
+    flex: 1,
     height: 50,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 15,
     fontSize: 16,
     color: "#2D3748",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
   },
   button: {
     height: 50,
@@ -188,6 +235,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginVertical: 10,
+  },
+  buttonDisabled: {
+    backgroundColor: "#C53030",
+    opacity: 0.7,
   },
   buttonText: {
     color: "#fff",
@@ -210,4 +261,21 @@ const styles = StyleSheet.create({
     color: "#E53E3E",
     fontWeight: '600',
   },
+  eyeIcon: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 12,
+    height: 50,
+  }
 });

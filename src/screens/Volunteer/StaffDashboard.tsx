@@ -75,14 +75,45 @@ export default function StaffDashboard({ navigation }: any) {
       setTodayDeliveries(todayList);
       setUpcomingDeliveries(upcomingList);
 
+      // ✅ CORREGIDO: Contar solo beneficiarios de las comunidades asignadas al staff
+      const uniqueCommunityNames = Array.from(new Set(assignedToMe.map(d => d.communityName)));
+      
+      console.log("🏘️ Comunidades asignadas:", uniqueCommunityNames);
+      
+      let totalBeneficiaries = 0;
+
+      if (uniqueCommunityNames.length > 0) {
+        // Para cada comunidad, contar los beneficiarios
+        for (const communityName of uniqueCommunityNames) {
+          try {
+            const beneficiariesSnapshot = await getDocs(
+              query(
+                collection(db, "users"), 
+                where("role", "==", "beneficiary"),
+                where("community", "==", communityName)
+              )
+            );
+            totalBeneficiaries += beneficiariesSnapshot.size;
+            console.log(`👥 Beneficiarios en ${communityName}:`, beneficiariesSnapshot.size);
+          } catch (error) {
+            console.error(`Error contando beneficiarios de ${communityName}:`, error);
+          }
+        }
+      }
+
       // Calcular estadísticas
       const uniqueCommunities = new Set(assignedToMe.map(d => d.communityName));
-      const totalBeneficiaries = assignedToMe.reduce((sum, d) => sum + (d.familias || 0), 0);
 
       setStats({
         totalAssignments: assignedToMe.length,
         communitiesCount: uniqueCommunities.size,
-        beneficiariesCount: totalBeneficiaries,
+        beneficiariesCount: totalBeneficiaries, // ✅ Ahora cuenta solo beneficiarios de comunidades asignadas
+      });
+
+      console.log("📊 Estadísticas finales:", {
+        entregas: assignedToMe.length,
+        comunidades: uniqueCommunities.size,
+        beneficiarios: totalBeneficiaries
       });
 
     } catch (error) {

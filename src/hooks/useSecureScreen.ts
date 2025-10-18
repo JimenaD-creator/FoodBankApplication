@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import * as ScreenCapture from "expo-screen-capture"
-import { Platform, Alert } from "react-native"
+import { Platform, Alert } from "react-native";
 
 /**
  * Hook to secure sensitive screens from screenshots and screen recording
