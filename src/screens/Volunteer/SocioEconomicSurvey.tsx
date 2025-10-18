@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, 
 import { Ionicons } from "@expo/vector-icons";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseconfig";
+import { useRoute, RouteProp  } from '@react-navigation/native';
 
 const FOOD_FREQUENCY = ["Siempre", "A veces", "Rara vez", "Nunca"];
 const INCOME_RANGES = ["Menos de $3,000", "$3,000 - $6,000", "$6,000 - $10,000", "Más de $10,000"];
@@ -18,7 +19,15 @@ const HEALTH_CONDITIONS = [
 ];
 const DIETARY_HABITS = ["Proteínas", "Fibra", "Ultraprocesados"];
 
+type RootStackParamList = {
+  SocioNutritionalFormScreen: { origin: string }
+};
+
+type SocioNutritionalFormScreenRouteProp = RouteProp< RootStackParamList, 'SocioNutritionalFormScreen' >;
+
 export default function SocioNutritionalFormScreen({ navigation }: any) {
+  const route = useRoute<SocioNutritionalFormScreenRouteProp>();
+  const { origin } = route.params;
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     totalPersonas: 0,
@@ -71,6 +80,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
       }
 
       await addDoc(collection(db, "socioNutritionalForms"), {
+        beneficiaryId: origin,
         userId: user.uid,
         ...formData,
         submittedAt: new Date(),

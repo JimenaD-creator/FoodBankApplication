@@ -283,7 +283,7 @@ export default function StaffDashboard({ navigation }: any) {
 
           <TouchableOpacity
             style={styles.actionCard}
-            onPress={() => navigation.navigate("BeneficiariesList")}
+            onPress={() => navigation.navigate("StaffBeneficiariesList")}
           >
             <View style={[styles.actionIcon, { backgroundColor: '#E3F2FD' }]}>
               <Ionicons name="people" size={24} color="#2196F3" />

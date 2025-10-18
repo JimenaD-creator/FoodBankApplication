@@ -4,7 +4,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function BeneficiariesList({ navigation }: any) {
+export default function StaffBeneficiariesList({ navigation }: any) {
   const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
   const [filteredBeneficiaries, setFilteredBeneficiaries] = useState<any[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -121,13 +121,13 @@ export default function BeneficiariesList({ navigation }: any) {
       </View>
     </View>
 
-    {/* NUEVO BOTÓN PARA VER ESTUDIO */}
+    {/* NUEVO BOTÓN PARA HACER ESTUDIO */}
     <TouchableOpacity
       style={styles.studyButton}
-      onPress={() => navigation.navigate("BeneficiaryStudyScreen", { beneficiaryId: item.id })}
+      onPress={() => navigation.navigate("SocioEconomicSurvey", { origin: item.id })}
     >
       <Ionicons name="document-text-outline" size={16} color="#2196F3" />
-      <Text style={styles.studyButtonText}>Ver estudios</Text>
+      <Text style={styles.studyButtonText}>Hacer Estudio</Text>
     </TouchableOpacity>
   </TouchableOpacity>
 );
