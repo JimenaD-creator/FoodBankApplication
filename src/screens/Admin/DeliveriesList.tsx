@@ -284,8 +284,27 @@ export default function DeliveryListScreen({ navigation }: any) {
                     <TouchableOpacity
                       key={delivery.id}
                       style={[styles.deliveryCard, { backgroundColor: getStatusBgColor(delivery.status) }]}
-                      onPress={() => navigation.navigate('BeneficiaryAttendance', { deliveryId: delivery.deliveryId})}
-                      activeOpacity={0.7}
+                      onPress={() => {
+                        const isCompleted = delivery.status?.toLowerCase() === 'completada' ||
+                        delivery.status?.toLowerCase() == 'entregada' ||
+                        delivery.status?.toLowerCase() === 'entregado';
+
+                        if(isCompleted){
+                          navigation.navigate('BeneficiaryAttendance', {deliveryId: delivery.deliveryId});
+                        }else{
+                           Alert.alert(
+                              'Entrega Pendiente',
+                              'La información de asistencia estará disponible cuando la entrega esté completada.',
+                              [{ text: 'Entendido' }]
+                            );
+
+                        }
+
+
+                      }}
+                        activeOpacity={0.7}
+
+                       
                     >
                       <View style={styles.deliveryHeader}>
                         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
@@ -324,8 +343,33 @@ export default function DeliveryListScreen({ navigation }: any) {
                       )}
 
                       <View style={styles.viewDetailsRow}>
-                        <Text style={styles.viewDetailsText}>Ver detalles</Text>
-                        <Ionicons name="chevron-forward" size={16} color="#2196F3" />
+                         <Text style={[
+    styles.viewDetailsText,
+    (delivery.status?.toLowerCase() !== 'completada' && 
+     delivery.status?.toLowerCase() !== 'entregada' &&
+     delivery.status?.toLowerCase() !== 'entregado') && 
+    { color: '#718096' }
+  ]}>
+    {(delivery.status?.toLowerCase() === 'completada' || 
+      delivery.status?.toLowerCase() === 'entregada' ||
+      delivery.status?.toLowerCase() === 'entregado')
+      ? 'Ver asistencia'
+      : 'Sin información disponible'}
+  </Text>
+  <Ionicons 
+    name={(delivery.status?.toLowerCase() === 'completada' || 
+           delivery.status?.toLowerCase() === 'entregada' ||
+           delivery.status?.toLowerCase() === 'entregado')
+      ? "chevron-forward" 
+      : "lock-closed"} 
+    size={16} 
+    color={(delivery.status?.toLowerCase() === 'completada' || 
+            delivery.status?.toLowerCase() === 'entregada' ||
+            delivery.status?.toLowerCase() === 'entregado')
+      ? "#2196F3" 
+      : "#718096"} 
+  />
+                        
                       </View>
                     </TouchableOpacity>
                   ))}

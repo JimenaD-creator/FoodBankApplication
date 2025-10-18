@@ -41,8 +41,10 @@ export default function DeliveryAssistanceScreen({ navigation, route }: any) {
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#E53E3E" />
-        <Text style={styles.loadingText}>Cargando información...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#E53E3E" />
+          <Text style={styles.loadingText}>Cargando información...</Text>
+        </View>
       </View>
     );
   }
@@ -50,10 +52,14 @@ export default function DeliveryAssistanceScreen({ navigation, route }: any) {
   if (!deliveryData) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text style={styles.errorText}>No se encontraron datos de la entrega</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>Regresar</Text>
-        </TouchableOpacity>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={64} color="#EF4444" />
+          <Text style={styles.errorText}>No se encontraron datos de la entrega</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={18} color="#fff" />
+            <Text style={styles.backButtonText}>Regresar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -88,20 +94,19 @@ export default function DeliveryAssistanceScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Header simple */}
+      {/* Header con gradiente */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.headerBackButton} 
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#E53E3E" />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         
-        <Image 
-          source={require('../../../assets/logo_no_background.png')} 
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Detalles de Asistencia</Text>
+          <Text style={styles.headerSubtitle}>Información de entrega</Text>
+        </View>
         
         <View style={styles.placeholder} />
       </View>
@@ -110,94 +115,111 @@ export default function DeliveryAssistanceScreen({ navigation, route }: any) {
         contentContainerStyle={styles.content} 
         showsVerticalScrollIndicator={false}
       >
-        {/* Card de asistencia */}
-        <View style={styles.card}>
-          <Text style={styles.title}>Asistencia</Text>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Fecha de entrega:</Text>
-            <View style={styles.valueContainer}>
-              <Text style={styles.value}>{assistanceData.deliveryDate}</Text>
+        {/* Card principal con gradiente */}
+        <View style={styles.mainCard}>
+          <View style={styles.cardHeader}>
+            <View style={styles.iconBadge}>
+              <Ionicons name="calendar" size={28} color="#fff" />
+            </View>
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.cardTitle}>Asistencia</Text>
+              <Text style={styles.cardSubtitle}>Información completa de la entrega</Text>
             </View>
           </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Nombre del beneficiario:</Text>
-            <View style={styles.valueContainer}>
-              <Text style={styles.value}>{assistanceData.beneficiaryName}</Text>
+          {/* Fecha de entrega */}
+          <View style={styles.infoCard}>
+            <View style={[styles.infoIconContainer, { backgroundColor: '#DBEAFE' }]}>
+              <Ionicons name="calendar-outline" size={24} color="#3B82F6" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Fecha de entrega</Text>
+              <Text style={styles.infoValue}>{assistanceData.deliveryDate}</Text>
             </View>
           </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Trabajador(es) social:</Text>
-            <View style={styles.valueContainer}>
+          {/* Beneficiario */}
+          <View style={styles.infoCard}>
+            <View style={[styles.infoIconContainer, { backgroundColor: '#D1FAE5' }]}>
+              <Ionicons name="person-outline" size={24} color="#10B981" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Beneficiario</Text>
+              <Text style={styles.infoValue}>{assistanceData.beneficiaryName}</Text>
+            </View>
+          </View>
+
+          {/* Trabajadores sociales */}
+          <View style={styles.infoCard}>
+            <View style={[styles.infoIconContainer, { backgroundColor: '#FCE7F3' }]}>
+              <Ionicons name="people-outline" size={24} color="#EC4899" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Trabajador(es) social</Text>
               {staffList.length > 0 ? (
                 <View style={styles.staffListContainer}>
                   {staffList.map((staffName, index) => (
-                    <View key={index} style={styles.staffItem}>
-                      <Ionicons name="person" size={16} color="#4A5568" style={styles.staffIcon} />
-                      <Text style={styles.staffName}>{staffName}</Text>
+                    <View key={index} style={styles.staffChip}>
+                      <View style={styles.staffChipDot} />
+                      <Text style={styles.staffChipText}>{staffName}</Text>
                     </View>
                   ))}
                 </View>
               ) : (
-                <Text style={styles.value}>Sin asignar</Text>
+                <Text style={[styles.infoValue, { color: '#9CA3AF' }]}>Sin asignar</Text>
               )}
             </View>
           </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Domicilio:</Text>
-            <View style={styles.valueContainer}>
-              <Text style={styles.value}>{assistanceData.address}</Text>
+          {/* Domicilio */}
+          <View style={styles.infoCard}>
+            <View style={[styles.infoIconContainer, { backgroundColor: '#FEF3C7' }]}>
+              <Ionicons name="home-outline" size={24} color="#F59E0B" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Domicilio</Text>
+              <Text style={styles.infoValue}>{assistanceData.address}</Text>
             </View>
           </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Comunidad:</Text>
-            <View style={styles.valueContainer}>
-              <Text style={styles.value}>{assistanceData.community}</Text>
+          {/* Comunidad */}
+          <View style={styles.infoCard}>
+            <View style={[styles.infoIconContainer, { backgroundColor: '#E0E7FF' }]}>
+              <Ionicons name="location-outline" size={24} color="#6366F1" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Comunidad</Text>
+              <Text style={styles.infoValue}>{assistanceData.community}</Text>
             </View>
           </View>
         </View>
 
-        {/* Botones de acción */}
+        {/* Botones de acción con gradientes */}
         <View style={styles.actions}>
-          <TouchableOpacity 
-            style={styles.printButton}
-            onPress={() => console.log("Imprimir")}
-          >
-            <Ionicons name="print-outline" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Imprimir</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.shareButton}
             onPress={() => console.log("Compartir")}
           >
-            <Ionicons name="share-social-outline" size={20} color="#fff" />
+            <View style={styles.buttonIconContainer}>
+              <Ionicons name="share-social" size={22} color="#fff" />
+            </View>
             <Text style={styles.buttonText}>Compartir</Text>
           </TouchableOpacity>
         </View>
+
+      
       </ScrollView>
 
-      {/* Footer */}
+      {/* Footer mejorado */}
       <View style={styles.footer}>
-        <Image 
-          source={require('../../../assets/logo_no_background.png')} 
-          style={styles.footerLogo}
-          resizeMode="contain"
-        />
-        <View style={styles.socialIcons}>
-          <TouchableOpacity>
-            <Ionicons name="globe-outline" size={24} color="#4A5568" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Ionicons name="logo-facebook" size={24} color="#4A5568" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Ionicons name="logo-instagram" size={24} color="#4A5568" />
-          </TouchableOpacity>
+        <View style={styles.footerContent}>
+          <Image 
+            source={require('../../../assets/logo_no_background.png')} 
+            style={styles.footerLogo}
+            resizeMode="contain"
+          />
+          
         </View>
       </View>
     </View>
@@ -207,34 +229,66 @@ export default function DeliveryAssistanceScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F3F4F6",
   },
   centered: {
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
+  loadingContainer: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 40,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
   loadingText: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 16,
     color: "#6B7280",
+    fontWeight: "600",
+  },
+  errorContainer: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 40,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   errorText: {
-    fontSize: 16,
-    color: "#E53E3E",
-    fontWeight: "600",
-    marginBottom: 20,
+    fontSize: 18,
+    color: "#EF4444",
+    fontWeight: "700",
+    marginVertical: 20,
+    textAlign: "center",
   },
   backButton: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#E53E3E",
     paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: "#E53E3E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   backButtonText: {
     color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
   },
   header: {
     flexDirection: "row",
@@ -243,90 +297,152 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     paddingTop: 50,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    backgroundColor: "#E53E3E",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: "#E53E3E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   headerBackButton: {
-    padding: 5,
+    padding: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 12,
   },
-  logo: {
-    width: 100,
-    height: 40,
+  headerContent: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginTop: 2,
   },
   placeholder: {
-    width: 34,
+    width: 40,
   },
   content: {
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
-  card: {
-    backgroundColor: "#FFF9E6",
-    borderRadius: 20,
-    padding: 24,
-    elevation: 3,
+  mainCard: {
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 20,
     shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#2D3748",
-    textAlign: "center",
-    marginBottom: 30,
-  },
-  field: {
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
     marginBottom: 20,
   },
-  label: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#2D3748",
-    marginBottom: 10,
-  },
-  valueContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  value: {
-    fontSize: 15,
-    color: "#1F2937",
-    fontWeight: "500",
-  },
-  // Nuevos estilos para la lista vertical de staff
-  staffListContainer: {
-    flexDirection: "column",
-    gap: 8,
-  },
-  staffItem: {
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 4,
+    marginBottom: 24,
+    paddingBottom: 20,
+    borderBottomWidth: 2,
+    borderBottomColor: "#FEE2E2",
   },
-  staffIcon: {
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "#E53E3E",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#E53E3E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardHeaderText: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1F2937",
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+  infoCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#F9FAFB",
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  infoIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#6B7280",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: "#1F2937",
+    fontWeight: "600",
+    lineHeight: 22,
+  },
+  staffListContainer: {
+    marginTop: 8,
+    gap: 8,
+  },
+  staffChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  staffChipDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#EC4899",
     marginRight: 8,
   },
-  staffName: {
-    fontSize: 15,
+  staffChipText: {
+    fontSize: 14,
     color: "#1F2937",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   actions: {
     flexDirection: "row",
     gap: 12,
-    marginTop: 24,
+    marginBottom: 20,
   },
   printButton: {
     flex: 1,
@@ -334,55 +450,99 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#E53E3E",
-    paddingVertical: 15,
-    borderRadius: 12,
+    paddingVertical: 16,
+    borderRadius: 16,
     gap: 8,
-    elevation: 3,
     shadowColor: "#E53E3E",
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
   },
   shareButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2196F3",
-    paddingVertical: 15,
-    borderRadius: 12,
+    backgroundColor: "#3B82F6",
+    paddingVertical: 16,
+    borderRadius: 16,
     gap: 8,
-    elevation: 3,
-    shadowColor: "#2196F3",
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  buttonIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   buttonText: {
     color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  infoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    padding: 16,
+    borderRadius: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  infoBoxText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#1E40AF",
+    lineHeight: 20,
+    fontWeight: "500",
   },
   footer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  footerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    paddingVertical: 20,
   },
   footerLogo: {
-    width: 80,
-    height: 35,
+    width: 90,
+    height: 40,
   },
   socialIcons: {
     flexDirection: "row",
-    gap: 15,
+    gap: 10,
+  },
+  socialButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

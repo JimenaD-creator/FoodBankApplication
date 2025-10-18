@@ -128,7 +128,6 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
       // Guardar en SecureStore siempre para evidencia
       await saveSecureData("socioFormDraft", JSON.stringify(formData));
       addLog("[EncryptionTest] ✅ Contenido guardado en SecureStore: " + JSON.stringify(formData));
-      Alert.alert("SecureStore Test", "Datos guardados correctamente ✅");
 
       if (!isConnected) {
         addLog("[Form] Guardado local en SecureStore (offline)");
