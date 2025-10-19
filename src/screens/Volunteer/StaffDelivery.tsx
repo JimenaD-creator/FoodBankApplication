@@ -162,11 +162,10 @@ export default function StaffDelivery({ route, navigation }: any) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-back" size={20} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>Entrega Programada</Text>
-            <Text style={styles.headerSubtitle}>Detalle de productos</Text>
           </View>
           <View style={styles.placeholder} />
         </View>
@@ -360,6 +359,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    height: 70,
   },
   backButton: {
     padding: 8,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
   },
