@@ -33,43 +33,56 @@ export default function BeneficiaryQR({ navigation }: any) {
       let beneficiaryData = null;
       let deliveryData = null;
 
-      // Debug: mostrar todas las entregas y sus beneficiarios
+      // Buscar en todas las entregas
       deliveriesSnapshot.forEach((doc) => {
         const delivery = doc.data();
         console.log(`📦 Entrega: ${delivery.communityName} (${doc.id})`);
+        console.log(`   Beneficiario:`, delivery.beneficiary);
         
-        if (delivery.beneficiaries && Array.isArray(delivery.beneficiaries)) {
-          console.log(`   👥 Beneficiarios: ${delivery.beneficiaries.length}`);
-          delivery.beneficiaries.forEach((b: any) => {
-            console.log(`   - ${b.id} : ${b.name}`);
-          });
-          
-          const beneficiary = delivery.beneficiaries.find(
-            (b: any) => b.id === currentUser.uid
-          );
-          
-          if (beneficiary) {
-            console.log("ENCONTRADO EN ESTA ENTREGA!");
-            beneficiaryData = beneficiary;
-            deliveryData = {
-              id: doc.id,
-              communityName: delivery.communityName,
-              municipio: delivery.municipio,
-              deliveryDate: delivery.deliveryDate,
-              status: delivery.status
-            };
-          }
+        // Verificar si esta entrega pertenece al usuario actual
+        if (delivery.beneficiary && delivery.beneficiary.id === currentUser.uid) {
+          console.log("✅ ENCONTRADO! Esta entrega pertenece al usuario");
+          beneficiaryData = delivery.beneficiary;
+          deliveryData = {
+            id: doc.id,
+            communityName: delivery.communityName,
+            municipio: delivery.municipio,
+            deliveryDate: delivery.deliveryDate,
+            status: delivery.status,
+            qrCode: delivery.beneficiary.qrCode
+          };
         }
       });
 
       if (beneficiaryData && deliveryData) {
+        // Usar el QR code específico del beneficiario o el ID de la entrega
+        const qrValue = deliveryData.qrCode || deliveryData.id;
+        
         setQrData({
-          deliveryId: deliveryData.id
+          deliveryId: qrValue,
+          beneficiaryName: beneficiaryData.name,
+          communityName: deliveryData.communityName,
+          municipio: deliveryData.municipio,
+          deliveryDate: deliveryData.deliveryDate,
+          status: deliveryData.status
         });
+        
         console.log("🎉 QR cargado correctamente para:", beneficiaryData.name);
+        console.log("📱 Valor del QR:", qrValue);
       } else {
         console.log("❌ Usuario no encontrado en ninguna entrega");
         console.log("ID buscado:", currentUser.uid);
+        
+        // Debug: mostrar todas las entregas para verificar la estructura
+        deliveriesSnapshot.forEach((doc) => {
+          const delivery = doc.data();
+          console.log(`Entrega ${doc.id}:`, {
+            beneficiaryId: delivery.beneficiary?.id,
+            beneficiaryName: delivery.beneficiary?.name,
+            community: delivery.communityName
+          });
+        });
+        
         setError(`No tienes entregas programadas en este momento.
 
 Si acabas de ser agregado a una entrega, espera unos minutos o contacta al administrador.`);
@@ -141,6 +154,7 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
         Muestra este código al voluntario para recibir tu despensa
       </Text>
 
+
       {/* Código QR */}
       <View style={styles.qrContainer}>
         <QRCode
@@ -149,6 +163,12 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
           backgroundColor="#fff"
           color="#4CAF50"
         />
+      </View>
+
+      {/* ID de la entrega para referencia */}
+      <View style={styles.codeContainer}>
+        <Text style={styles.codeLabel}>ID de entrega:</Text>
+        <Text style={styles.codeValue}>{qrData.deliveryId}</Text>
       </View>
 
       {/* Instrucciones */}
@@ -257,21 +277,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     alignSelf: "center"
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginBottom: 20,
-    gap: 8
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#fff"
   },
   codeContainer: {
     backgroundColor: "#fff",
