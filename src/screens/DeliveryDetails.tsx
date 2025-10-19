@@ -20,6 +20,7 @@ interface Product {
   quantity: number; 
 }
 
+// En la interfaz Delivery, añade el campo volunteers
 interface Delivery {
   id: string;
   communityName: string;
@@ -27,7 +28,23 @@ interface Delivery {
   deliveryDate: any;
   products: { [productId: string]: { quantity: number } };
   status: string;
+  volunteers: Array<{ id: string; name: string }>; // Añadir este campo
 }
+
+// En el componente, añade esta función para obtener los nombres de los voluntarios
+const getVolunteersText = (volunteers: Array<{ id: string; name: string }>) => {
+  if (!volunteers || volunteers.length === 0) {
+    return "No asignado";
+  }
+  
+  // Si hay solo un voluntario
+  if (volunteers.length === 1) {
+    return volunteers[0].name;
+  }
+  
+  // Si hay múltiples voluntarios
+  return `${volunteers.length} voluntarios`;
+};
 
 interface Props {
   route: { params: { delivery: Delivery } };
@@ -103,7 +120,7 @@ export default function DeliveryDetails({ route, navigation }: any) {
 
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'completada' || statusLower === 'entregada') return '#10B981';
+    if (statusLower === 'entregado' || statusLower === 'Entregado') return '#10B981';
     if (statusLower === 'en camino') return '#F59E0B';
     if (statusLower === 'programada') return '#3B82F6';
     return '#6B7280';
@@ -111,7 +128,7 @@ export default function DeliveryDetails({ route, navigation }: any) {
 
   const getStatusIcon = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'completada' || statusLower === 'entregada') return 'checkmark-circle';
+    if (statusLower === 'entregado' || statusLower === 'Entregado') return 'checkmark-circle';
     if (statusLower === 'en camino') return 'car';
     if (statusLower === 'programada') return 'calendar';
     return 'time';
@@ -187,6 +204,16 @@ export default function DeliveryDetails({ route, navigation }: any) {
                 <Text style={styles.detailValue}>{formatTime(delivery.deliveryDate)}</Text>
               </View>
             </View>
+            {/* Añade este DetailItem después de la sección de hora */}
+<View style={styles.detailItem}>
+  <View style={[styles.detailIconContainer, { backgroundColor: '#E0F2FE' }]}>
+    <Ionicons name="person-outline" size={20} color="#0EA5E9" />
+  </View>
+  <View style={styles.detailTextContainer}>
+    <Text style={styles.detailLabel}>Voluntario</Text>
+    <Text style={styles.detailValue}>{getVolunteersText(delivery.volunteers)}</Text>
+  </View>
+</View>
           </View>
 
           <View style={styles.statusContainer}>
