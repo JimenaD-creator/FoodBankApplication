@@ -64,15 +64,7 @@ export default function BeneficiaryQR({ navigation }: any) {
 
       if (beneficiaryData && deliveryData) {
         setQrData({
-          deliveryId: deliveryData.id,
-          beneficiaryId: beneficiaryData.id,
-          qrCode: beneficiaryData.qrCode,
-          beneficiaryName: beneficiaryData.name,
-          communityName: deliveryData.communityName,
-          municipio: deliveryData.municipio,
-          deliveryDate: deliveryData.deliveryDate,
-          status: deliveryData.status,
-          redeemed: beneficiaryData.redeemed || false
+          deliveryId: deliveryData.id
         });
         console.log("🎉 QR cargado correctamente para:", beneficiaryData.name);
       } else {
@@ -152,12 +144,7 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
       {/* Código QR */}
       <View style={styles.qrContainer}>
         <QRCode
-          value={JSON.stringify({
-            deliveryId: qrData.deliveryId,
-            beneficiaryId: qrData.beneficiaryId,
-            qrCode: qrData.qrCode,
-            timestamp: new Date().toISOString()
-          })}
+          value={qrData.deliveryId}
           size={250}
           backgroundColor="#fff"
           color="#4CAF50"

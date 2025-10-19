@@ -11,6 +11,9 @@ interface AssignedDelivery {
   deliveryDate: any;
   status: string;
   familias: number;
+  beneficiary: {
+    name: string
+  }
 }
 
 export default function StaffDashboard({ navigation }: any) {
@@ -69,7 +72,7 @@ export default function StaffDashboard({ navigation }: any) {
 
       const upcomingList = assignedToMe.filter(d => {
         const deliveryDate = d.deliveryDate.toDate();
-        return deliveryDate >= tomorrow;
+        return deliveryDate >= tomorrow && d.status !== "Entregado";
       }).sort((a, b) => a.deliveryDate.toDate() - b.deliveryDate.toDate());
 
       setTodayDeliveries(todayList);
@@ -241,7 +244,7 @@ export default function StaffDashboard({ navigation }: any) {
                   {delivery.communityName}, {delivery.municipio}
                 </Text>
                 <Text style={styles.todayDeliveryFamilies}>
-                  {delivery.familias} familias
+                  {delivery.beneficiary.name} 
                 </Text>
               </TouchableOpacity>
             ))}
@@ -283,8 +286,8 @@ export default function StaffDashboard({ navigation }: any) {
                       {formatTime(delivery.deliveryDate)}
                     </Text>
                     <Ionicons name="people-outline" size={16} color="#718096" style={{ marginLeft: 12 }} />
-                    <Text style={styles.deliveryMetaText}>
-                      {delivery.familias} familias
+                    <Text style={styles.todayDeliveryFamilies}>
+                      {delivery.beneficiary.name} 
                     </Text>
                   </View>
                 </View>
