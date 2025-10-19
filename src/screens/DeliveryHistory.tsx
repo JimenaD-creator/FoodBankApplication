@@ -49,8 +49,6 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
 
       console.log("🔍 Buscando entregas para el voluntario:", currentUser.uid);
 
-      // ✅ SOLUCIÓN: Cargar TODAS las entregas y filtrar localmente
-      // porque array-contains no funciona con objetos anidados
       const q = query(
         collection(db, "scheduledDeliveries"),
         orderBy("deliveryDate", "desc")
@@ -64,7 +62,6 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
 
       console.log("📊 Total de entregas en sistema:", allDeliveries.length);
 
-      // Filtrar entregas donde el usuario actual es voluntario
       const userDeliveries = allDeliveries.filter(delivery => {
         const isVolunteer = delivery.volunteers?.some(volunteer => volunteer.id === currentUser.uid);
         if (isVolunteer) {
@@ -154,6 +151,32 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
     }
   };
 
+  const getStatusBackgroundColor = (status: string) => {
+    switch (status) {
+      case "Entregado":
+        return "#D1FAE5"; // Verde claro
+      case "Programada":
+        return "#DBEAFE"; // Azul claro
+      case "Cancelada":
+        return "#FEE2E2"; // Rojo claro
+      default:
+        return "#F9FAFB"; // Gris claro
+    }
+  };
+
+  const getDateBoxColor = (status: string) => {
+    switch (status) {
+      case "Entregado":
+        return "#A7F3D0"; // Verde más intenso
+      case "Programada":
+        return "#93C5FD"; // Azul más intenso
+      case "Cancelada":
+        return "#FECACA"; // Rojo más intenso
+      default:
+        return "#E5E7EB"; // Gris más intenso
+    }
+  };
+
   const openDetails = (delivery: Delivery) => {
     setSelectedDelivery(delivery);
     setShowDetailsModal(true);
@@ -207,16 +230,17 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                 </View>
 
                 {selectedDelivery.beneficiary?.name && (
-  <View style={styles.detailRow}>
-    <Ionicons name="person" size={20} color="#9C27B0" />
-    <View style={styles.detailTextContainer}>
-      <Text style={styles.detailLabel}>Beneficiario</Text>
-      <Text style={styles.detailValue}>
-        {selectedDelivery.beneficiary.name}
-      </Text>
-    </View>
-  </View>
-)}
+                  <View style={styles.detailRow}>
+                    <Ionicons name="person" size={20} color="#9C27B0" />
+                    <View style={styles.detailTextContainer}>
+                      <Text style={styles.detailLabel}>Beneficiario</Text>
+                      <Text style={styles.detailValue}>
+                        {selectedDelivery.beneficiary.name}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
                 <View style={styles.detailRow}>
                   <Ionicons name="calendar" size={20} color="#2196F3" />
                   <View style={styles.detailTextContainer}>
@@ -321,7 +345,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
           <Text style={[styles.statValue, { color: "#4CAF50" }]}>
             {deliveries.filter(d => d.status === "Entregado").length}
           </Text>
-          <Text style={styles.statLabel}>Entregados</Text>
+          <Text style={styles.statLabel}>Entregadas</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={[styles.statValue, { color: "#2196F3" }]}>
@@ -380,13 +404,19 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
           filteredDeliveries.map((delivery) => (
             <TouchableOpacity
               key={delivery.id}
-              style={styles.deliveryCard}
+              style={[
+                styles.deliveryCard,
+                { backgroundColor: getStatusBackgroundColor(delivery.status) }
+              ]}
               onPress={() => openDetails(delivery)}
               activeOpacity={0.7}
             >
               <View style={styles.deliveryCardHeader}>
                 <View style={styles.deliveryCardLeft}>
-                  <View style={styles.dateBox}>
+                  <View style={[
+                    styles.dateBox,
+                    { backgroundColor: getDateBoxColor(delivery.status) }
+                  ]}>
                     <Text style={styles.dateDay}>
                       {delivery.deliveryDate?.toDate()?.getDate() || "?"}
                     </Text>
@@ -399,23 +429,32 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                     <Text style={styles.municipioName}>{delivery.municipio}</Text>
                   </View>
                 </View>
-                <View style={[styles.statusDot, { backgroundColor: getStatusColor(delivery.status) }]} />
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
+                  <Ionicons name={getStatusIcon(delivery.status)} size={16} color="#fff" />
+                </View>
               </View>
 
               <View style={styles.deliveryCardFooter}>
                 <View style={styles.cardInfo}>
-                  <Ionicons name="people-outline" size={16} color="#718096" />
+                  <View style={styles.cardInfoIconContainer}>
+                    <Ionicons name="people" size={16} color="#6B7280" />
+                  </View>
                   <Text style={styles.cardInfoText}>
                     {delivery.volunteers?.length || 0} voluntario{delivery.volunteers?.length !== 1 ? 's' : ''}
                   </Text>
                 </View>
                 <View style={styles.cardInfo}>
-                  <Ionicons name="cube-outline" size={16} color="#718096" />
+                  <View style={styles.cardInfoIconContainer}>
+                    <Ionicons name="cube" size={16} color="#6B7280" />
+                  </View>
                   <Text style={styles.cardInfoText}>
                     {delivery.products ? Object.keys(delivery.products).length : 0} productos
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
+                <View style={styles.viewDetailsContainer}>
+                  <Text style={styles.viewDetailsText}>Ver detalles</Text>
+                  <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+                </View>
               </View>
             </TouchableOpacity>
           ))
@@ -427,7 +466,6 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   );
 }
 
-// Agregar estilos para el botón de reintento
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -547,20 +585,22 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   deliveryCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 10,
     marginBottom: 12,
-    elevation: 2,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   deliveryCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   deliveryCardLeft: {
     flexDirection: "row",
@@ -568,58 +608,91 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dateBox: {
-    width: 50,
-    height: 50,
-    backgroundColor: "#F7FAFC",
-    borderRadius: 10,
+    width: 56,
+    height: 56,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   dateDay: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#2D3748",
+    color: "#1F2937",
   },
   dateMonth: {
-    fontSize: 12,
-    color: "#718096",
+    fontSize: 11,
+    color: "#4B5563",
     textTransform: "uppercase",
+    fontWeight: "600",
   },
   deliveryCardInfo: {
     flex: 1,
   },
   communityName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#2D3748",
-    marginBottom: 2,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 4,
   },
   municipioName: {
     fontSize: 13,
-    color: "#718096",
+    color: "#6B7280",
+    fontWeight: "500",
   },
-  statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  statusBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   deliveryCardFooter: {
     flexDirection: "row",
     alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#F7FAFC",
+    borderTopColor: "rgba(255, 255, 255, 0.5)",
+    gap: 12,
   },
   cardInfo: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 16,
     gap: 6,
+  },
+  cardInfoIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   cardInfoText: {
     fontSize: 13,
-    color: "#718096",
+    color: "#374151",
+    fontWeight: "600",
+  },
+  viewDetailsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: "auto",
+    gap: 4,
+  },
+  viewDetailsText: {
+    fontSize: 13,
+    color: "#6B7280",
+    fontWeight: "600",
   },
   modalOverlay: {
     flex: 1,

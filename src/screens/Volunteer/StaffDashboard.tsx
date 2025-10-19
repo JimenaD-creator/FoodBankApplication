@@ -399,36 +399,36 @@ export default function StaffDashboard({ navigation }: any) {
 
         {/* Quick actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Herramientas</Text>
+  <Text style={styles.sectionTitle}>Herramientas</Text>
 
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => navigation.navigate("StaffBeneficiariesList")}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#E3F2FD' }]}>
-              <Ionicons name="people" size={24} color="#2196F3" />
-            </View>
-            <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Lista de beneficiarios</Text>
-              <Text style={styles.actionSubtitle}>Consultar información</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
-          </TouchableOpacity>
+  <TouchableOpacity
+    style={[styles.actionCard, { backgroundColor: '#E3F2FD' }]}
+    onPress={() => navigation.navigate("StaffBeneficiariesList")}
+  >
+    <View style={[styles.actionIcon, { backgroundColor: '#2196F3' }]}>
+      <Ionicons name="people" size={24} color="#fff" />
+    </View>
+    <View style={styles.actionContent}>
+      <Text style={styles.actionTitle}>Lista de beneficiarios</Text>
+      <Text style={[styles.actionSubtitle, { color: '#1565C0' }]}>Consultar información</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={20} color="#2196F3" />
+  </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => navigation.navigate("DeliveryHistory")}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#FFF3E0' }]}>
-              <Ionicons name="cube" size={24} color="#FF9800" />
-            </View>
-            <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Historial de entregas</Text>
-              <Text style={styles.actionSubtitle}>Ver entregas completadas</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
-          </TouchableOpacity>
-        </View>
+  <TouchableOpacity
+    style={[styles.actionCard, { backgroundColor: '#FFF3E0' }]}
+    onPress={() => navigation.navigate("DeliveryHistory")}
+  >
+    <View style={[styles.actionIcon, { backgroundColor: '#FF9800' }]}>
+      <Ionicons name="cube" size={24} color="#fff" />
+    </View>
+    <View style={styles.actionContent}>
+      <Text style={styles.actionTitle}>Historial de entregas</Text>
+      <Text style={[styles.actionSubtitle, { color: '#E65100' }]}>Ver entregas completadas</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={20} color="#FF9800" />
+  </TouchableOpacity>
+</View>
       </ScrollView>
     </View>
   );
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 16,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 10,
     elevation: 1,
     shadowColor: "#000",
     shadowOpacity: 0.05,

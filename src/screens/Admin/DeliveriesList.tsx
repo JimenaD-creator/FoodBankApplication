@@ -319,7 +319,7 @@ export default function DeliveryListScreen({ navigation }: any) {
 
                       <View style={styles.deliveryInfo}>
                         <View style={styles.deliveryInfoRow}>
-                          <Ionicons name="calendar-outline" size={18} color="#2196F3" />
+                          <Ionicons name="calendar-outline" size={18} color="#c93716" />
                           <Text style={styles.deliveryInfoText}>{formatDate(delivery.deliveryDate)}</Text>
                         </View>
                         <View style={styles.deliveryInfoRow}>
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
   },
   viewDetailsText: {
     fontSize: 13,
-    color: "#2196F3",
+    color: "#c93716",
     fontWeight: "500",
   },
   emptyContainer: {
