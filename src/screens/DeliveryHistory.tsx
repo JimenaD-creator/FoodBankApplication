@@ -23,7 +23,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  const filters = ["Todas", "Completada", "Programada", "Cancelada"];
+  const filters = ["Todas", "Entregado", "Programada", "Cancelada"];
   const currentUser = auth.currentUser;
 
   useEffect(() => {
@@ -129,7 +129,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Completada":
+      case "Entregado":
         return "#4CAF50";
       case "Programada":
         return "#2196F3";
@@ -142,7 +142,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "Completada":
+      case "Entregado":
         return "checkmark-circle";
       case "Programada":
         return "time";
@@ -315,9 +315,9 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
         </View>
         <View style={styles.statCard}>
           <Text style={[styles.statValue, { color: "#4CAF50" }]}>
-            {deliveries.filter(d => d.status === "Completada").length}
+            {deliveries.filter(d => d.status === "Entregado").length}
           </Text>
-          <Text style={styles.statLabel}>Completadas</Text>
+          <Text style={styles.statLabel}>Entregados</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={[styles.statValue, { color: "#2196F3" }]}>
