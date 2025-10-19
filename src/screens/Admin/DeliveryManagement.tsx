@@ -16,6 +16,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
   const [communities, setCommunities] = useState<any[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
   const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [volunteerFilter, setVolunteerFilter] = useState<string>("");
   
   // Función para generar ID único compatible con React Native
   const generateUniqueId = () => {
@@ -23,6 +24,13 @@ export default function DeliveryManagementScreen({ navigation }: any) {
     const randomPart = Math.random().toString(36).substring(2, 15);
     return `qr_${timestamp}_${randomPart}`;
   };
+
+  const filteredVolunteers = volunteerFilter 
+  ? volunteers.filter(volunteer => 
+      volunteer.community && 
+      volunteer.community.trim().toLowerCase() === volunteerFilter.trim().toLowerCase()
+    )
+  : volunteers;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -186,15 +194,15 @@ export default function DeliveryManagementScreen({ navigation }: any) {
                         user.community.trim().toLowerCase() === communityName.trim().toLowerCase()
                     );
 
-                     const communityVolunteers = usersData.filter(
+                    {/* const communityVolunteers = usersData.filter(
                       (user) =>
                         user.role === "staff" &&
                         user.community &&
                         user.community.trim().toLowerCase() === communityName.trim().toLowerCase()
-                    );
+                    );*/} 
 
                     setBeneficiaries(communityBeneficiaries);
-                    setVolunteers(communityVolunteers.map((v) => ({ ...v, selected: false })));
+                    //setVolunteers(communityVolunteers.map((v) => ({ ...v, selected: false })));
       
                     console.log(
                       `Beneficiarios vinculados con comunidad ${communityName}:`,
@@ -312,55 +320,88 @@ export default function DeliveryManagementScreen({ navigation }: any) {
           />
         )}
 
-        {/* Voluntarios */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Asignar voluntarios</Text>
-          
-          {volunteers.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="people-outline" size={48} color="#E2E8F0" />
-              <Text style={styles.emptyStateText}>No hay voluntarios disponibles</Text>
-            </View>
-          ) : (
-            <View style={styles.volunteersGrid}>
-              {volunteers.map((volunteer) => (
-                <TouchableOpacity
-                  key={volunteer.id}
-                  style={[
-                    styles.volunteerCard,
-                    volunteer.selected && styles.volunteerSelected,
-                  ]}
-                  onPress={() => toggleVolunteer(volunteer.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[
-                    styles.volunteerCheckbox,
-                    volunteer.selected && styles.volunteerCheckboxSelected
-                  ]}>
-                    {volunteer.selected && (
-                      <Ionicons name="checkmark" size={18} color="#fff" />
-                    )}
-                  </View>
-                  <View style={styles.volunteerInfo}>
-                    <Ionicons name="person-circle-outline" size={24} color="#718096" />
-                    <Text style={styles.volunteerName}>
-                      {volunteer.fullName || volunteer.name}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+  <Text style={styles.sectionTitle}>Asignar voluntarios</Text>
+  
+  {/* Filtro de comunidad para voluntarios */}
+  <View style={styles.filterContainer}>
+    <Text style={styles.filterLabel}>Filtrar voluntarios por comunidad:</Text>
+    <View style={styles.pickerContainer}>
+      <Picker
+        selectedValue={volunteerFilter}
+        onValueChange={(itemValue) => setVolunteerFilter(itemValue)}
+        style={styles.picker}
+      >
+        <Picker.Item label="Todas las comunidades" value="" />
+        {communities.map((community) => (
+          <Picker.Item
+            key={community.id}
+            label={`${community.municipio} - ${community.nombre}`}
+            value={community.nombre}
+          />
+        ))}
+      </Picker>
+    </View>
+  </View>
 
-          {volunteers.filter(v => v.selected).length > 0 && (
-            <View style={styles.selectedCountBadge}>
-              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-              <Text style={styles.selectedCountText}>
-                {volunteers.filter(v => v.selected).length} voluntario(s) seleccionado(s)
+  {/* Lista de voluntarios filtrados */}
+  {filteredVolunteers.length === 0 ? (
+    <View style={styles.emptyState}>
+      <Ionicons name="people-outline" size={48} color="#E2E8F0" />
+      <Text style={styles.emptyStateText}>
+        {volunteerFilter ? 
+          `No hay voluntarios en ${volunteerFilter}` : 
+          "No hay voluntarios disponibles"
+        }
+      </Text>
+    </View>
+  ) : (
+    <View style={styles.volunteersGrid}>
+      {filteredVolunteers.map((volunteer) => (
+        <TouchableOpacity
+          key={volunteer.id}
+          style={[
+            styles.volunteerCard,
+            volunteer.selected && styles.volunteerSelected,
+          ]}
+          onPress={() => toggleVolunteer(volunteer.id)}
+          activeOpacity={0.7}
+        >
+          <View style={[
+            styles.volunteerCheckbox,
+            volunteer.selected && styles.volunteerCheckboxSelected
+          ]}>
+            {volunteer.selected && (
+              <Ionicons name="checkmark" size={18} color="#fff" />
+            )}
+          </View>
+          <View style={styles.volunteerInfo}>
+            <Ionicons name="person-circle-outline" size={24} color="#718096" />
+            <View>
+              <Text style={styles.volunteerName}>
+                {volunteer.fullName || volunteer.name}
               </Text>
+              {volunteer.community && (
+                <Text style={styles.volunteerCommunity}>
+                  {volunteer.community}
+                </Text>
+              )}
             </View>
-          )}
-        </View>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  )}
+
+  {filteredVolunteers.filter(v => v.selected).length > 0 && (
+    <View style={styles.selectedCountBadge}>
+      <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+      <Text style={styles.selectedCountText}>
+        {filteredVolunteers.filter(v => v.selected).length} voluntario(s) seleccionado(s)
+      </Text>
+    </View>
+  )}
+</View>
 
         {/* Botón Guardar */}
         <TouchableOpacity 
@@ -578,5 +619,19 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+   filterContainer: {
+    marginBottom: 15,
+  },
+  filterLabel: {
+    fontSize: 14,
+    color: "#4A5568",
+    marginBottom: 8,
+    fontWeight: "500",
+  },
+  volunteerCommunity: {
+    fontSize: 12,
+    color: "#718096",
+    marginTop: 2,
   },
 });
