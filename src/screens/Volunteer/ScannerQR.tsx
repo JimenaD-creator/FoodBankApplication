@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Button, Alert } from 'react-native';
-import { Camera, CameraView, CameraType, BarCodeScanningResult } from 'expo-camera';
+import { Camera, CameraView, CameraType, BarcodeScanningResult } from 'expo-camera';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 
 import {auth, db} from '../firebaseconfig';
