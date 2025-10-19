@@ -14,6 +14,7 @@ interface Delivery {
   deliveryDate: any
   volunteers: { id: string; name: string }[]
   products: any
+  beneficiary : { id: string }
   status: "Programada" | "En camino" | "Completada"
 }
 
@@ -55,7 +56,7 @@ export default function BeneficiaryDashboard({ navigation }: any) {
         const community = userData.community
         setUserCommunity(community)
 
-        const unsubscribe = loadDeliveries(community)
+        const unsubscribe = loadDeliveries(user.uid)
         return unsubscribe
       }
     } catch (error) {
@@ -65,12 +66,13 @@ export default function BeneficiaryDashboard({ navigation }: any) {
     }
   }
 
-  const loadDeliveries = (community: string) => {
+  const loadDeliveries = (userId: string) => {
     const q = query(
       collection(db, "scheduledDeliveries"),
-      where("communityName", "==", community),
-      orderBy("deliveryDate", "asc"),
-    )
+      where("beneficiary.id", "==", userId),
+      orderBy("deliveryDate", "asc")
+    );
+
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const now = new Date()
@@ -117,7 +119,7 @@ export default function BeneficiaryDashboard({ navigation }: any) {
         return "#2196F3"
       case "En camino":
         return "#FF9800"
-      case "Completada":
+      case "Entregado":
         return "#4CAF50"
       default:
         return "#718096"
