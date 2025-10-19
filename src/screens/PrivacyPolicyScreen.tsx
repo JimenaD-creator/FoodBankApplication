@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { 
   StyleSheet, 
   Text, 
@@ -9,10 +10,25 @@ import {
   Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+=======
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+>>>>>>> Stashed changes
 import { acceptPrivacyPolicy } from '../services/privacyService';
 import { useState } from 'react';
 
-export default function PrivacyPolicyScreen({ route, navigation }: any) {
+interface PrivacyPolicyScreenProps {
+  navigation: any;
+  route: {
+    params: {
+      uid: string;
+      onAccept?: () => void;
+    };
+  };
+}
+
+export default function PrivacyPolicyScreen({ navigation, route }: PrivacyPolicyScreenProps) {
   const { uid, onAccept } = route.params;
   const [accepted, setAccepted] = useState(false);
 
@@ -43,6 +59,7 @@ export default function PrivacyPolicyScreen({ route, navigation }: any) {
   };
 
   return (
+<<<<<<< Updated upstream
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -234,10 +251,53 @@ export default function PrivacyPolicyScreen({ route, navigation }: any) {
         </TouchableOpacity>
       </View>
     </View>
+=======
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Política de Privacidad</Text>
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        <Text style={styles.lastUpdated}>Última actualización: {new Date().toLocaleDateString("es-MX")}</Text>
+        <Text style={styles.sectionTitle}>1. Información que Recopilamos</Text>
+        <Text style={styles.paragraph}>Recopilamos información personal que usted nos proporciona directamente, incluyendo:</Text>
+        <Text style={styles.bulletPoint}>• Nombre completo y datos de contacto</Text>
+        <Text style={styles.bulletPoint}>• Información demográfica y socioeconómica</Text>
+        <Text style={styles.bulletPoint}>• Datos de ubicación de comunidades</Text>
+        <Text style={styles.bulletPoint}>• Fotografías y documentos de identificación</Text>
+        <Text style={styles.bulletPoint}>• Información de entregas y beneficios recibidos</Text>
+
+        <Text style={styles.sectionTitle}>2. Uso de la Información</Text>
+        <Text style={styles.paragraph}>Utilizamos la información recopilada para:</Text>
+        <Text style={styles.bulletPoint}>• Gestionar y coordinar entregas de despensas</Text>
+        <Text style={styles.bulletPoint}>• Verificar la identidad de beneficiarios</Text>
+        <Text style={styles.bulletPoint}>• Realizar estudios socioeconómicos</Text>
+        <Text style={styles.bulletPoint}>• Generar reportes y estadísticas</Text>
+        <Text style={styles.bulletPoint}>• Mejorar nuestros servicios</Text>
+
+        {/* Agrega más secciones según necesites */}
+
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      {/* Botón siempre visible */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.acceptButton} onPress={handleAccept}>
+          <Text style={styles.acceptButtonText}>Aceptar Política de Privacidad</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+>>>>>>> Stashed changes
   );
 }
 
 const styles = StyleSheet.create({
+<<<<<<< Updated upstream
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -414,3 +474,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+=======
+  container: { flex: 1, backgroundColor: "#fff" },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "#D3D3D3",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  backButton: { padding: 8 },
+  headerTitle: { fontSize: 18, fontWeight: "bold", color: "#000" },
+  placeholder: { width: 40 },
+  scrollView: { flex: 1 },
+  content: { padding: 20 },
+  lastUpdated: { fontSize: 12, color: "#718096", marginBottom: 20, fontStyle: "italic" },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#2D3748", marginTop: 20, marginBottom: 10 },
+  paragraph: { fontSize: 14, color: "#4A5568", lineHeight: 22, marginBottom: 10 },
+  bulletPoint: { fontSize: 14, color: "#4A5568", lineHeight: 22, marginLeft: 10, marginBottom: 5 },
+  bottomSpacing: { height: 40 },
+  footer: { padding: 20, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#E2E8F0" },
+  acceptButton: { backgroundColor: "#4CAF50", paddingVertical: 16, borderRadius: 12, alignItems: "center" },
+  acceptButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+});
+>>>>>>> Stashed changes
