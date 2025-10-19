@@ -76,8 +76,8 @@ export default function DeliveryAssistanceScreen({ navigation, route }: any) {
       }
     })(),
 
-    beneficiaryName: Array.isArray(deliveryData.beneficiaries) 
-    ? deliveryData.beneficiaries
+    beneficiaryName: Array.isArray(deliveryData.beneficiary) 
+    ? deliveryData.beneficiary
         .map((b: any) => b?.name)
         .filter(Boolean)
         .join(", ") || "Sin asignar"

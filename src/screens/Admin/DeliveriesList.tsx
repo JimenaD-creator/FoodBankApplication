@@ -12,71 +12,75 @@ export default function DeliveryListScreen({ navigation }: any) {
   const [filter, setFilter] = useState('todas'); // todas, programadas, completadas
 
   const fetchDeliveries = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const scheduledDeliveriesRef = collection(db, 'scheduledDeliveries');
-      const scheduledSnapshot = await getDocs(scheduledDeliveriesRef);
+    const scheduledDeliveriesRef = collection(db, 'scheduledDeliveries');
+    const scheduledSnapshot = await getDocs(scheduledDeliveriesRef);
 
-      const usersRef = collection(db, 'users');
-      const beneficiariesQuery = query(usersRef, where('role', '==', 'beneficiary'));
-      const beneficiariesSnapshot = await getDocs(beneficiariesQuery);
+    const usersRef = collection(db, 'users');
+    const beneficiariesQuery = query(usersRef, where('role', '==', 'beneficiary'));
+    const beneficiariesSnapshot = await getDocs(beneficiariesQuery);
 
-      const beneficiariesMap: any = {};
-      beneficiariesSnapshot.forEach(doc => {
-        beneficiariesMap[doc.id] = { id: doc.id, ...doc.data() };
-      });
+    const beneficiariesMap: any = {};
+    beneficiariesSnapshot.forEach(doc => {
+      beneficiariesMap[doc.id] = { id: doc.id, ...doc.data() };
+    });
 
-      const deliveriesData: any[] = [];
+    const deliveriesData: any[] = [];
 
-      scheduledSnapshot.forEach(doc => {
-        const delivery = doc.data();
-
-        const matchingBeneficiaries = Object.values(beneficiariesMap).filter(
-          (b: any) => b.community?.toLowerCase?.() === delivery.communityName?.toLowerCase?.()
-        );
-
-        matchingBeneficiaries.forEach((beneficiary: any) => {
-          deliveriesData.push({
-            id: `${doc.id}_${beneficiary.id}`,
-            deliveryId: doc.id,
-            beneficiaryId: beneficiary.id,
-            beneficiaryName: beneficiary.fullName || beneficiary.name || 'Sin nombre',
-            deliveryDate: delivery.deliveryDate,
-            status: delivery.status || 'Pendiente',
-            communityName: delivery.communityName || '',
-            products: delivery.products || {},
-            familias: delivery.familias || 0,
-            municipio: delivery.municipio || '',
-            volunteers: delivery.volunteers || []
-          });
+    // Procesar cada documento de entrega individual
+    scheduledSnapshot.forEach(doc => {
+      const delivery = doc.data();
+      
+      // Obtener el beneficiario específico de esta entrega
+      const beneficiary = beneficiariesMap[delivery.beneficiary?.id];
+      
+      if (beneficiary) {
+        deliveriesData.push({
+          id: doc.id, // Usar el ID único de la entrega
+          deliveryId: doc.id,
+          beneficiaryId: beneficiary.id,
+          beneficiaryName: beneficiary.fullName || beneficiary.name || 'Sin nombre',
+          deliveryDate: delivery.deliveryDate,
+          status: delivery.status || 'Pendiente',
+          communityName: delivery.communityName || '',
+          products: delivery.products || {},
+          familias: delivery.familias || 0,
+          municipio: delivery.municipio || '',
+          volunteers: delivery.volunteers || [],
+          // Mantener la referencia al objeto beneficiary original si es necesario
+          beneficiaryData: beneficiary
         });
-      });
+      } else {
+        console.warn('Beneficiario no encontrado para la entrega:', doc.id, delivery.beneficiary?.id);
+      }
+    });
 
-      // Agrupar por beneficiario
-      const groupedDeliveries = Object.values(
-        deliveriesData.reduce((acc: any, delivery: any) => {
-          if (!acc[delivery.beneficiaryId]) {
-            acc[delivery.beneficiaryId] = {
-              beneficiaryId: delivery.beneficiaryId,
-              beneficiaryName: delivery.beneficiaryName,
-              communityName: delivery.communityName,
-              deliveries: []
-            };
-          }
-          acc[delivery.beneficiaryId].deliveries.push(delivery);
-          return acc;
-        }, {})
-      );
+    // Agrupar por beneficiario (solo las entregas que le corresponden)
+    const groupedDeliveries = Object.values(
+      deliveriesData.reduce((acc: any, delivery: any) => {
+        if (!acc[delivery.beneficiaryId]) {
+          acc[delivery.beneficiaryId] = {
+            beneficiaryId: delivery.beneficiaryId,
+            beneficiaryName: delivery.beneficiaryName,
+            communityName: delivery.communityName,
+            deliveries: []
+          };
+        }
+        acc[delivery.beneficiaryId].deliveries.push(delivery);
+        return acc;
+      }, {})
+    );
 
-      setDeliveries(groupedDeliveries);
-    } catch (error: any) {
-      Alert.alert('Error', 'No se pudieron cargar las entregas: ' + error.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    setDeliveries(groupedDeliveries);
+  } catch (error: any) {
+    Alert.alert('Error', 'No se pudieron cargar las entregas: ' + error.message);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+};
 
   useEffect(() => {
 

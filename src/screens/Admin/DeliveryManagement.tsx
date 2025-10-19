@@ -72,67 +72,82 @@ export default function DeliveryManagementScreen({ navigation }: any) {
   };
 
   const handleSave = async () => {
-    if (!selectedCommunity) {
-      Alert.alert("Error", "Debes seleccionar una comunidad");
-      return;
-    }
+  if (!selectedCommunity) {
+    Alert.alert("Error", "Debes seleccionar una comunidad");
+    return;
+  }
 
-    const selectedVolunteers = volunteers.filter((v) => v.selected);
-    if (selectedVolunteers.length === 0) {
-      Alert.alert("Error", "Debes asignar al menos un voluntario");
-      return;
-    }
+  const selectedVolunteers = volunteers.filter((v) => v.selected);
+  if (selectedVolunteers.length === 0) {
+    Alert.alert("Error", "Debes asignar al menos un voluntario");
+    return;
+  }
+  
+  if (!standardTemplate || Object.keys(standardTemplate).length === 0) {
+    Alert.alert("Error", "No se ha cargado la plantilla estándar. Intenta de nuevo.");
+    console.log("standardTemplate es null o vacío:", standardTemplate);
+    return;
+  }
+
+  console.log("Guardando con productos:", standardTemplate);
+  console.log("Número de productos:", Object.keys(standardTemplate).length);
+
+  try {
+    const selectedCommunityData = communities.find(c => c.id === selectedCommunity);
     
-    if (!standardTemplate || Object.keys(standardTemplate).length === 0) {
-      Alert.alert("Error", "No se ha cargado la plantilla estándar. Intenta de nuevo.");
-      console.log("standardTemplate es null o vacío:", standardTemplate);
-      return;
-    }
+    // En handleSave, modifica la creación de beneficiariesWithQR:
+const beneficiariesWithQR = beneficiaries.map((b) => ({
+  id: b.id, // Este es el ID del documento del beneficiario en Firestore
+  name: b.nombre || b.fullName,
+  qrCode: generateUniqueId(),
+  redeemed: false,
+}));
 
-    console.log("Guardando con productos:", standardTemplate);
-    console.log("Número de productos:", Object.keys(standardTemplate).length);
+// Y en la creación de cada entrega individual, asegúrate de que beneficiary.id sea el correcto
+const deliveryPromises = beneficiariesWithQR.map(async (beneficiary) => {
+  const deliveryRef = await addDoc(collection(db, "scheduledDeliveries"), {
+    communityId: selectedCommunity,
+    communityName: selectedCommunityData?.nombre || "",
+    municipio: selectedCommunityData?.municipio || "",
+    familias: selectedCommunityData?.familias || 0,
+    deliveryDate: date,
+    volunteers: selectedVolunteers.map((v) => ({
+      id: v.id,
+      name: v.fullName || v.name,
+    })),
+    beneficiary: {
+      id: beneficiary.id, // Este debe coincidir con el ID del documento del beneficiario
+      name: beneficiary.name,
+      qrCode: beneficiary.qrCode,
+      redeemed: beneficiary.redeemed,
+    },
+    products: standardTemplate,
+    status: "Programada",
+    createdAt: new Date(),
+    deliveryId: generateUniqueId(),
+  });
+  return deliveryRef.id;
+});
 
-    try {
-      const selectedCommunityData = communities.find(c => c.id === selectedCommunity);
-      
-      //Generar QR único para cada beneficiario
-      const beneficiariesWithQR = beneficiaries.map((b) => ({
-        id: b.id,
-        name: b.nombre || b.fullName,
-        qrCode: generateUniqueId(),
-        redeemed: false,
-      }));
+    // Esperar a que todas las entregas se guarden
+    const deliveryIds = await Promise.all(deliveryPromises);
 
-      console.log("📝 Guardando entrega con beneficiarios:", beneficiariesWithQR);
+    console.log("✅ Entregas guardadas con IDs:", deliveryIds);
+    console.log("👥 Entregas individuales creadas:", beneficiariesWithQR.length);
+    console.log("📦 Productos por entrega:", Object.keys(standardTemplate).length);
 
-      const deliveryRef = await addDoc(collection(db, "scheduledDeliveries"), {
-        communityId: selectedCommunity,
-        communityName: selectedCommunityData?.nombre || "",
-        municipio: selectedCommunityData?.municipio || "",
-        familias: selectedCommunityData?.familias || 0,
-        deliveryDate: date,
-        volunteers: selectedVolunteers.map((v) => ({
-          id: v.id,
-          name: v.fullName || v.name,
-        })),
-        beneficiaries: beneficiariesWithQR,
-        products: standardTemplate,
-        status: "Programada",
-        createdAt: new Date(),
-      });
-
-      console.log("✅ Entrega guardada con ID:", deliveryRef.id);
-      console.log("👥 Beneficiarios incluidos:", beneficiariesWithQR.length);
-      console.log("📦 Productos incluidos:", Object.keys(standardTemplate).length);
-
-      Alert.alert("Éxito", "Entrega programada correctamente", [
+    Alert.alert(
+      "Éxito", 
+      `Se programaron ${beneficiariesWithQR.length} entregas individuales correctamente`,
+      [
         { text: "OK", onPress: () => navigation.goBack() }
-      ]);
-    } catch (error) {
-      console.error("Error saving delivery: ", error);
-      Alert.alert("Error", "No se pudo guardar la entrega");
-    }
-  };
+      ]
+    );
+  } catch (error) {
+    console.error("Error saving deliveries: ", error);
+    Alert.alert("Error", "No se pudieron guardar las entregas");
+  }
+};
 
   const selectedCommunityData = communities.find(c => c.id === selectedCommunity);
 

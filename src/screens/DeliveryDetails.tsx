@@ -197,25 +197,6 @@ export default function DeliveryDetails({ route, navigation }: any) {
           </View>
         </View>
 
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <View style={[styles.statIconContainer, { backgroundColor: '#DBEAFE' }]}>
-              <Ionicons name="cube" size={24} color="#3B82F6" />
-            </View>
-            <Text style={styles.statValue}>{totalProducts}</Text>
-            <Text style={styles.statLabel}>Productos totales</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <View style={[styles.statIconContainer, { backgroundColor: '#D1FAE5' }]}>
-              <Ionicons name="grid" size={24} color="#10B981" />
-            </View>
-            <Text style={styles.statValue}>{totalCategories}</Text>
-            <Text style={styles.statLabel}>Categorías</Text>
-          </View>
-        </View>
-
         {/* Products Section */}
         <View style={styles.productsSection}>
           <Text style={styles.sectionTitle}>Productos incluidos</Text>
