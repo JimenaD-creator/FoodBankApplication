@@ -12,6 +12,9 @@ interface Delivery {
   deliveryDate: any;
   products: { [productId: string]: { quantity: number } };
   status: string;
+  beneficiary : {
+    qrCode: string
+  }
 }
 
 type RootStackParamList = {
@@ -24,6 +27,8 @@ export default function ScannerQR() {
   const route = useRoute<QrScannerRouteProp>();
   const { delivery } = route.params;
   const navigation = useNavigation();
+
+  console.log(delivery.beneficiary.qrCode);
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
@@ -61,7 +66,7 @@ export default function ScannerQR() {
     setScanned(true);
 
     const { data } = result;
-    if (data === delivery.id) {
+    if (data === delivery.beneficiary.qrCode) {
       await marcarComoEntregado();
     } else {
       Alert.alert('❌', 'El código QR no coincide, inténtelo nuevamente.');
