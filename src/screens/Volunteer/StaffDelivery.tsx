@@ -316,9 +316,6 @@ export default function StaffDelivery({ route, navigation }: any) {
           </View>
           <View style={styles.qrButtonTextContainer}>
             <Text style={styles.qrButtonText}>Escanear código QR</Text>
-            <Text style={styles.qrButtonSubtext}>
-              Registrar entrega a {delivery.beneficiary?.name || "el beneficiario"}
-            </Text>
           </View>
           <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.7)" />
         </TouchableOpacity>
