@@ -13,6 +13,7 @@ interface Delivery {
   products: any;
   status: string;
   familias: number;
+  beneficiary?: {name: string};
 }
 
 export default function DeliveryHistoryScreen({ navigation }: any) {
@@ -205,6 +206,17 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                   </View>
                 </View>
 
+                {selectedDelivery.beneficiary?.name && (
+  <View style={styles.detailRow}>
+    <Ionicons name="person" size={20} color="#9C27B0" />
+    <View style={styles.detailTextContainer}>
+      <Text style={styles.detailLabel}>Beneficiario</Text>
+      <Text style={styles.detailValue}>
+        {selectedDelivery.beneficiary.name}
+      </Text>
+    </View>
+  </View>
+)}
                 <View style={styles.detailRow}>
                   <Ionicons name="calendar" size={20} color="#2196F3" />
                   <View style={styles.detailTextContainer}>
@@ -218,15 +230,6 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                   </View>
                 </View>
 
-                <View style={styles.detailRow}>
-                  <Ionicons name="people" size={20} color="#FF9800" />
-                  <View style={styles.detailTextContainer}>
-                    <Text style={styles.detailLabel}>Familias beneficiadas</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedDelivery.familias || 0} familias
-                    </Text>
-                  </View>
-                </View>
               </View>
 
               {/* Voluntarios */}
@@ -242,6 +245,7 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
                   </View>
                 ))}
               </View>
+              
 
               {/* Productos */}
               <View style={styles.detailSection}>
