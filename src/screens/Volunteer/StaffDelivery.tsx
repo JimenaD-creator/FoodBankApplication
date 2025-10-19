@@ -1,16 +1,15 @@
-
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, ImageBackground, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, ImageBackground, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 
 const PRODUCT_CATEGORIES = [
-  { id: "canasta_basica", name: "Canasta básica", color: "#FFE8CC" },
-  { id: "fruta_verdura", name: "Fruta y verdura", color: "#FFE8CC" },
-  { id: "carne_lacteos", name: "Carne, embutido, lácteos", color: "#FFEBEE" },
-  { id: "abarrotes", name: "Abarrotes", color: "#FFF9C4" },
-  { id: "no_alimenticios", name: "No alimenticios", color: "#E3F2FD" }
+  { id: "canasta_basica", name: "Canasta básica", color: "#FFE8CC", icon: "basket", gradient: ["#FFE8CC", "#FFD9A6"] },
+  { id: "fruta_verdura", name: "Fruta y verdura", color: "#D4EDDA", icon: "leaf", gradient: ["#D4EDDA", "#C3E6CB"] },
+  { id: "carne_lacteos", name: "Carne, embutido, lácteos", color: "#FFEBEE", icon: "restaurant", gradient: ["#FFEBEE", "#FFCDD2"] },
+  { id: "abarrotes", name: "Abarrotes", color: "#FFF9C4", icon: "cart", gradient: ["#FFF9C4", "#FFF59D"] },
+  { id: "no_alimenticios", name: "No alimenticios", color: "#E3F2FD", icon: "cube", gradient: ["#E3F2FD", "#BBDEFB"] }
 ];
 
 interface Product {
@@ -39,6 +38,7 @@ export default function StaffDelivery({ route, navigation }: any) {
   const { delivery } = route.params;
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -52,7 +52,7 @@ export default function StaffDelivery({ route, navigation }: any) {
           name: p.name,
           category: p.category,
           unit: p.unit,
-          quantity: delivery.products[id]?.quantity || 0 // cantidad de esta entrega
+          quantity: delivery.products[id]?.quantity || 0
         }));
 
         setProducts(productArray);
@@ -67,76 +67,239 @@ export default function StaffDelivery({ route, navigation }: any) {
     loadProducts();
   }, [delivery.products]);
 
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+
   const groupedProducts = PRODUCT_CATEGORIES.reduce((acc, cat) => {
     acc[cat.id] = products.filter((p) => p.category === cat.id);
     return acc;
   }, {} as Record<string, Product[]>);
 
-  const formatDate = (timestamp: any) => timestamp.toDate().toLocaleDateString("es-MX");
-  const formatTime = (timestamp: any) => timestamp.toDate().toLocaleTimeString("es-MX");
+  const formatDate = (timestamp: any) => {
+    const date = timestamp.toDate();
+    return date.toLocaleDateString("es-MX", { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
 
-  if (loading) return <Text style={{ marginTop: 50, textAlign: "center" }}>Cargando despensa...</Text>;
+  const formatTime = (timestamp: any) => {
+    return timestamp.toDate().toLocaleTimeString("es-MX", { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'completada' || statusLower === 'entregada') return '#10B981';
+    if (statusLower === 'en camino') return '#F59E0B';
+    if (statusLower === 'programada') return '#3B82F6';
+    return '#6B7280';
+  };
+
+  const getStatusIcon = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'completada' || statusLower === 'entregada') return 'checkmark-circle';
+    if (statusLower === 'en camino') return 'car';
+    if (statusLower === 'programada') return 'calendar';
+    return 'time';
+  };
+
+  const totalProducts = products.reduce((sum, p) => sum + p.quantity, 0);
+  const totalCategories = PRODUCT_CATEGORIES.filter(cat => groupedProducts[cat.id]?.length > 0).length;
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#E53E3E" />
+        <Text style={styles.loadingText}>Cargando información de entrega...</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={{ padding: 0 }}>
+    <View style={styles.container}>
+      {/* Header */}
       <ImageBackground 
         source={require('../../../assets/background.jpg')}
         style={styles.headerBackground}
         resizeMode="cover"
-        >
+      >
         <View style={styles.header}>
-        <TouchableOpacity 
-                  style={styles.backButton}
-                  onPress={() => navigation.goBack()}
-                >
-                  <Ionicons name="arrow-back" size={24} color="#E53E3E" />
-                </TouchableOpacity>
-                <Text style={styles.title}>Entrega Programada</Text>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Entrega Programada</Text>
+            <Text style={styles.headerSubtitle}>Detalle de productos</Text>
+          </View>
+          <View style={styles.placeholder} />
+        </View>
+      </ImageBackground>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Info Card */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoHeader}>
+            <View style={styles.iconBadge}>
+              <Ionicons name="location" size={24} color="#E53E3E" />
+            </View>
+            <View style={styles.infoHeaderText}>
+              <Text style={styles.communityName}>{delivery.communityName}</Text>
+              <Text style={styles.municipio}>{delivery.municipio}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <View style={[styles.detailIconContainer, { backgroundColor: '#DBEAFE' }]}>
+                <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
               </View>
-            </ImageBackground>
-      <Text style= {styles.subtitle}>Comunidad: {delivery.communityName}, {delivery.municipio}</Text>
-      <Text style= {styles.subtitle}>Fecha: {formatDate(delivery.deliveryDate)}</Text>
-      <Text style= {styles.subtitle}>Hora: {formatTime(delivery.deliveryDate)}</Text>
-      <Text style= {styles.subtitle}>Estatus: {delivery.status}</Text>
-
-      {PRODUCT_CATEGORIES.map((cat) => {
-        const catProducts = groupedProducts[cat.id] || [];
-        return (
-          <View key={cat.id} style={{ marginTop: 20, marginHorizontal: 5 }}>
-
-            <View style={{ backgroundColor: cat.color, padding: 10, borderRadius: 10, flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ fontWeight: "bold" }}>{cat.name}</Text>
-              <Text>{catProducts.length}</Text>
+              <View style={styles.detailTextContainer}>
+                <Text style={styles.detailLabel}>Fecha</Text>
+                <Text style={styles.detailValue}>{formatDate(delivery.deliveryDate)}</Text>
+              </View>
             </View>
 
-            {catProducts.length === 0 ? (
-              <Text style={{ marginLeft: 10, marginTop: 5, color: "#A0AEC0" }}>No hay productos en esta categoría</Text>
-            ) : (
-              catProducts.map((p) => (
-                <View key={p.id} style={styles.productRow}>
-                  <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                  <Text>{p.name} - {p.quantity} {p.unit}</Text>
-                </View>
-              ))
-            )}
-            
+            <View style={styles.detailItem}>
+              <View style={[styles.detailIconContainer, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="time-outline" size={20} color="#F59E0B" />
+              </View>
+              <View style={styles.detailTextContainer}>
+                <Text style={styles.detailLabel}>Hora</Text>
+                <Text style={styles.detailValue}>{formatTime(delivery.deliveryDate)}</Text>
+              </View>
+            </View>
           </View>
-        );
-      })}
-      <TouchableOpacity
-        style={styles.qrButton}
-        onPress={() => navigation.navigate("ScannerQR", { delivery })}
+
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
+              <Ionicons name={getStatusIcon(delivery.status)} size={16} color="#fff" />
+              <Text style={styles.statusText}>{delivery.status}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Products Section */}
+        <View style={styles.productsSection}>
+          <Text style={styles.sectionTitle}>Productos por categoría</Text>
+
+          {PRODUCT_CATEGORIES.map((cat) => {
+            const catProducts = groupedProducts[cat.id] || [];
+            const isExpanded = expandedCategories.has(cat.id);
+            
+            if (catProducts.length === 0) return null;
+
+            return (
+              <View key={cat.id} style={styles.categoryCard}>
+                <TouchableOpacity 
+                  style={[styles.categoryHeader, { backgroundColor: cat.color }]}
+                  onPress={() => toggleCategory(cat.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.categoryHeaderLeft}>
+                    <View style={styles.categoryIconContainer}>
+                      <Ionicons name={cat.icon as any} size={22} color="#2D3748" />
+                    </View>
+                    <View>
+                      <Text style={styles.categoryName}>{cat.name}</Text>
+                      <Text style={styles.categoryCount}>{catProducts.length} productos</Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.categoryHeaderRight}>
+                    <View style={styles.categoryBadge}>
+                      <Text style={styles.categoryBadgeText}>
+                        {catProducts.reduce((sum, p) => sum + p.quantity, 0)}
+                      </Text>
+                    </View>
+                    <Ionicons 
+                      name={isExpanded ? "chevron-up" : "chevron-down"} 
+                      size={20} 
+                      color="#4B5563" 
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {isExpanded && (
+                  <View style={styles.categoryContent}>
+                    {catProducts.map((p, index) => (
+                      <View 
+                        key={p.id} 
+                        style={[
+                          styles.productRow,
+                          index === catProducts.length - 1 && styles.productRowLast
+                        ]}
+                      >
+                        <View style={styles.productCheckbox}>
+                          <Ionicons name="checkmark" size={16} color="#10B981" />
+                        </View>
+                        <Text style={styles.productName}>{p.name}</Text>
+                        <View style={styles.productQuantityBadge}>
+                          <Text style={styles.productQuantity}>{p.quantity} {p.unit}</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* QR Button */}
+        <TouchableOpacity
+          style={styles.qrButton}
+          onPress={() => navigation.navigate("ScannerQR", { delivery })}
+          activeOpacity={0.8}
         >
-        <Text style={styles.qrButtonText}>Escanear QR</Text>
-    </TouchableOpacity>
-    </ScrollView>
+          <View style={styles.qrButtonIcon}>
+            <Ionicons name="qr-code" size={28} color="#fff" />
+          </View>
+          <View style={styles.qrButtonTextContainer}>
+            <Text style={styles.qrButtonText}>Escanear código QR</Text>
+            <Text style={styles.qrButtonSubtext}>Registrar entrega al beneficiario</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.7)" />
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F3F4F6",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#6B7280",
+    fontWeight: "500",
   },
   headerBackground: {
     paddingTop: 40,
@@ -147,68 +310,327 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    paddingVertical: 18,
+    backgroundColor: "#E53E3E",
     marginHorizontal: 20,
     marginTop: 10,
     borderRadius: 20,
+    shadowColor: "#E53E3E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
   },
   backButton: {
-    padding: 5,
+    padding: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 12,
   },
-  title: {
+  headerTextContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#E53E3E",
+    color: "#fff",
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginTop: 2,
+  },
+  placeholder: {
+    width: 40,
+  },
+  scrollView: {
     flex: 1,
-    textAlign: "center",
-    marginHorizontal: 10,
-  },
-  subtitle : {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#E53E3E",
-    flex: 1,
-    textAlign: "left",
-    marginHorizontal: 10,
-  },
-  headerActions: {
-    flexDirection: "row",
-  },
-  headerActionButton: {
-    padding: 5,
-    marginLeft: 10,
   },
   infoCard: {
     backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  productRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 5 },
-  infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 12, gap: 8 },
-  infoText: { fontSize: 16, color: "#2D3748" },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#2D3748", marginBottom: 12 },
-  productsContainer: { backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 20 },
-  productItem: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  productText: { fontSize: 16, color: "#2D3748" },
-  qrButton: {
-    backgroundColor: "#4CAF50",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
+    marginHorizontal: 20,
     marginTop: 20,
-    marginBottom: 20,
-    marginHorizontal: 25,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
-  qrButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  infoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "#FEE2E2",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  infoHeaderText: {
+    flex: 1,
+  },
+  communityName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  municipio: {
+    fontSize: 15,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+    marginBottom: 16,
+  },
+  detailsGrid: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F9FAFB",
+    padding: 12,
+    borderRadius: 12,
+  },
+  detailIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  detailTextContainer: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  statusContainer: {
+    alignItems: "flex-start",
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 6,
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#fff",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    marginTop: 16,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  productsSection: {
+    marginHorizontal: 20,
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 16,
+  },
+  categoryCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    marginBottom: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  categoryHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+  },
+  categoryHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  categoryIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 2,
+  },
+  categoryCount: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+  categoryHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  categoryBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.1)",
+  },
+  categoryBadgeText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#1F2937",
+  },
+  categoryContent: {
+    backgroundColor: "#F9FAFB",
+    paddingTop: 8,
+  },
+  productRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  productRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 16,
+  },
+  productCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: "#D1FAE5",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  productName: {
+    flex: 1,
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
+  },
+  productQuantityBadge: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  productQuantity: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  qrButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#10B981",
+    marginHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 40,
+    padding: 20,
+    borderRadius: 20,
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  qrButtonIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  qrButtonTextContainer: {
+    flex: 1,
+  },
+  qrButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 2,
+  },
+  qrButtonSubtext: {
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 13,
+    fontWeight: "500",
+  },
 });
