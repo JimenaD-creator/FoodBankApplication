@@ -27,6 +27,11 @@ interface Delivery {
   deliveryDate: any;
   products: { [productId: string]: { quantity: number } };
   status: string;
+  beneficiary: {
+    id: string;
+    name: string;
+  };
+  volunteers: Array<{ id: string; name: string }>;
 }
 
 interface Props {
@@ -44,7 +49,10 @@ export default function StaffDelivery({ route, navigation }: any) {
     const loadProducts = async () => {
       try {
         const templateDoc = await getDoc(doc(db, "deliveries", "standardTemplate"));
-        if (!templateDoc.exists()) return;
+        if (!templateDoc.exists()) {
+          Alert.alert("Error", "No se encontró la plantilla estándar de productos.");
+          return;
+        }
 
         const templateData = templateDoc.data().products || {};
         const productArray: Product[] = Object.entries(templateData).map(([id, p]: any) => ({
@@ -57,7 +65,7 @@ export default function StaffDelivery({ route, navigation }: any) {
 
         setProducts(productArray);
       } catch (error) {
-        Alert.alert("Error", "No se pudo cargar la despensa.");
+        Alert.alert("Error", "No se pudo cargar la información de la despensa.");
         console.error(error);
       } finally {
         setLoading(false);
@@ -103,7 +111,7 @@ export default function StaffDelivery({ route, navigation }: any) {
 
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'completada' || statusLower === 'entregada') return '#10B981';
+    if (statusLower === 'completada' || statusLower === 'entregada' || statusLower === 'entregado') return '#10B981';
     if (statusLower === 'en camino') return '#F59E0B';
     if (statusLower === 'programada') return '#3B82F6';
     return '#6B7280';
@@ -111,10 +119,22 @@ export default function StaffDelivery({ route, navigation }: any) {
 
   const getStatusIcon = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'completada' || statusLower === 'entregada') return 'checkmark-circle';
+    if (statusLower === 'completada' || statusLower === 'entregada' || statusLower === 'entregado') return 'checkmark-circle';
     if (statusLower === 'en camino') return 'car';
     if (statusLower === 'programada') return 'calendar';
     return 'time';
+  };
+
+  const getVolunteersText = (volunteers: Array<{ id: string; name: string }>) => {
+    if (!volunteers || volunteers.length === 0) {
+      return "No asignado";
+    }
+    
+    if (volunteers.length === 1) {
+      return volunteers[0].name;
+    }
+    
+    return `${volunteers.length} voluntarios`;
   };
 
   const totalProducts = products.reduce((sum, p) => sum + p.quantity, 0);
@@ -167,6 +187,22 @@ export default function StaffDelivery({ route, navigation }: any) {
 
           <View style={styles.divider} />
 
+          {/* Sección del Beneficiario */}
+          <View style={styles.beneficiarySection}>
+            <View style={styles.beneficiaryHeader}>
+              <Ionicons name="person" size={18} color="#4CAF50" />
+              <Text style={styles.beneficiaryTitle}>Beneficiario</Text>
+            </View>
+            <View style={styles.beneficiaryInfo}>
+              <Text style={styles.beneficiaryName}>
+                {delivery.beneficiary?.name || "Nombre no disponible"}
+              </Text>
+             
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
           <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
               <View style={[styles.detailIconContainer, { backgroundColor: '#DBEAFE' }]}>
@@ -187,6 +223,8 @@ export default function StaffDelivery({ route, navigation }: any) {
                 <Text style={styles.detailValue}>{formatTime(delivery.deliveryDate)}</Text>
               </View>
             </View>
+
+          
           </View>
 
           <View style={styles.statusContainer}>
@@ -267,7 +305,10 @@ export default function StaffDelivery({ route, navigation }: any) {
         {/* QR Button */}
         <TouchableOpacity
           style={styles.qrButton}
-          onPress={() => navigation.navigate("ScannerQR", { delivery })}
+          onPress={() => navigation.navigate("ScannerQR", { 
+            delivery,
+            beneficiaryName: delivery.beneficiary?.name 
+          })}
           activeOpacity={0.8}
         >
           <View style={styles.qrButtonIcon}>
@@ -275,7 +316,9 @@ export default function StaffDelivery({ route, navigation }: any) {
           </View>
           <View style={styles.qrButtonTextContainer}>
             <Text style={styles.qrButtonText}>Escanear código QR</Text>
-            <Text style={styles.qrButtonSubtext}>Registrar entrega al beneficiario</Text>
+            <Text style={styles.qrButtonSubtext}>
+              Registrar entrega a {delivery.beneficiary?.name || "el beneficiario"}
+            </Text>
           </View>
           <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.7)" />
         </TouchableOpacity>
@@ -386,6 +429,44 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontWeight: "500",
   },
+  // Estilos para la sección del beneficiario
+  beneficiarySection: {
+    marginBottom: 16,
+  },
+  beneficiaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 8,
+  },
+  beneficiaryTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  beneficiaryInfo: {
+    backgroundColor: "#F0F9FF",
+    padding: 12,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
+  },
+  beneficiaryName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  beneficiaryIdContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  beneficiaryId: {
+    fontSize: 12,
+    color: "#718096",
+    fontFamily: "monospace",
+  },
   divider: {
     height: 1,
     backgroundColor: "#E5E7EB",
@@ -443,42 +524,45 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  statsContainer: {
+  // Tarjeta de estadísticas
+  statsCard: {
     flexDirection: "row",
+    backgroundColor: "#fff",
     marginHorizontal: 20,
     marginTop: 16,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
   },
-  statIconContainer: {
+  statItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  statIcon: {
     width: 48,
     height: 48,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
+  },
+  statText: {
+    flex: 1,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#1F2937",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
     color: "#6B7280",
-    textAlign: "center",
     fontWeight: "500",
   },
   productsSection: {

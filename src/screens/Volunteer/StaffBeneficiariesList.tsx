@@ -52,14 +52,16 @@ export default function StaffBeneficiariesList({ navigation }: any) {
     switch (status?.toLowerCase()) {
       case "activo":
       case "aprobado":
-        return "#4CAF50";
+        return "#10B981";
+      case "evaluación":
+        return "#2196F3";
       case "pendiente":
-        return "#FF9800";
+        return "#F59E0B";
       case "inactivo":
       case "rechazado":
-        return "#E53E3E";
+        return "#EF4444";
       default:
-        return "#718096";
+        return "#6B7280";
     }
   };
 
@@ -68,6 +70,8 @@ export default function StaffBeneficiariesList({ navigation }: any) {
       case "activo":
       case "aprobado":
         return "checkmark-circle";
+      case "evaluación":
+        return "document-text-outline";
       case "pendiente":
         return "time-outline";
       case "inactivo":
@@ -78,59 +82,98 @@ export default function StaffBeneficiariesList({ navigation }: any) {
     }
   };
 
-  const renderItem = ({ item }: any) => (
-  <TouchableOpacity style={styles.item} activeOpacity={0.7}>
-    <View style={styles.itemHeader}>
-      <View style={styles.nameContainer}>
-        <Ionicons name="person" size={20} color="#4CAF50" />
-        <Text style={styles.name}>{item.fullName || "Nombre no definido"}</Text>
-      </View>
-      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-        <Ionicons 
-          name={getStatusIcon(item.status)} 
-          size={12} 
-          color="#fff" 
-        />
-        <Text style={styles.statusText}>{item.status || "Sin definir"}</Text>
-      </View>
-    </View>
-    
-    <View style={styles.infoContainer}>
-      <View style={styles.infoRow}>
-        <Ionicons name="location-outline" size={16} color="#718096" />
-        <Text style={styles.info}>
-          <Text style={styles.infoLabel}>Comunidad: </Text>
-          {item.community || "No definido"}
-        </Text>
-      </View>
-      
-      <View style={styles.infoRow}>
-        <Ionicons name="call-outline" size={16} color="#718096" />
-        <Text style={styles.info}>
-          <Text style={styles.infoLabel}>Teléfono: </Text>
-          {item.phone || "No definido"}
-        </Text>
-      </View>
-      
-      <View style={styles.infoRow}>
-        <Ionicons name="people-outline" size={16} color="#718096" />
-        <Text style={styles.info}>
-          <Text style={styles.infoLabel}>Familia: </Text>
-          {item.familySize ? `${item.familySize} personas` : "No definido"}
-        </Text>
-      </View>
-    </View>
+  const renderItem = ({ item }: any) => {
+    const canDoStudy = item.status?.toLowerCase() === "evaluación";
+    const isPending = item.status?.toLowerCase() === "pendiente";
+    const isApproved = item.status?.toLowerCase() === "aprobado" || item.status?.toLowerCase() === "activo";
 
-    {/* NUEVO BOTÓN PARA HACER ESTUDIO */}
-    <TouchableOpacity
-      style={styles.studyButton}
-      onPress={() => navigation.navigate("SocioEconomicSurvey", { origin: item.id })}
-    >
-      <Ionicons name="document-text-outline" size={16} color="#2196F3" />
-      <Text style={styles.studyButtonText}>Hacer Estudio</Text>
-    </TouchableOpacity>
-  </TouchableOpacity>
-);
+    return (
+      <TouchableOpacity style={styles.item} activeOpacity={0.7}>
+        <View style={styles.itemHeader}>
+          <View style={styles.nameContainer}>
+            <Ionicons name="person" size={20} color="#4CAF50" />
+            <Text style={styles.name}>{item.fullName || "Nombre no definido"}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Ionicons 
+              name={getStatusIcon(item.status)} 
+              size={12} 
+              color="#fff" 
+            />
+            <Text style={styles.statusText}>{item.status || "Sin definir"}</Text>
+          </View>
+        </View>
+        
+        <View style={styles.infoContainer}>
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={16} color="#718096" />
+            <Text style={styles.info}>
+              <Text style={styles.infoLabel}>Comunidad: </Text>
+              {item.community || "No definido"}
+            </Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Ionicons name="call-outline" size={16} color="#718096" />
+            <Text style={styles.info}>
+              <Text style={styles.infoLabel}>Teléfono: </Text>
+              {item.phone || "No definido"}
+            </Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Ionicons name="people-outline" size={16} color="#718096" />
+            <Text style={styles.info}>
+              <Text style={styles.infoLabel}>Familia: </Text>
+              {item.familySize ? `${item.familySize} personas` : "No definido"}
+            </Text>
+          </View>
+        </View>
+        {canDoStudy ? (
+          <TouchableOpacity
+            style={styles.studyButton}
+            onPress={() => navigation.navigate("SocioEconomicSurvey", { origin: item.id })}
+          >
+            <Ionicons name="document-text-outline" size={16} color="#2196F3" />
+            <Text style={styles.studyButtonText}>Hacer Estudio Socioeconómico</Text>
+          </TouchableOpacity>
+        ) : isPending ? (
+          // ESTADO PENDIENTE: Información de validación
+          <View style={styles.disabledStudyContainer}>
+            <View style={styles.disabledStudyButton}>
+              <Ionicons name="time-outline" size={16} color="#F59E0B" />
+              <Text style={styles.disabledStudyButtonText}>Validación Pendiente</Text>
+            </View>
+            <Text style={styles.disabledStudyInfo}>
+              El beneficiario debe de responder un estudio inicial
+            </Text>
+          </View>
+        ) : isApproved ? (
+          // ESTADO APROBADO: Indicador de completado
+          <View style={styles.approvedContainer}>
+            <View style={styles.approvedBadge}>
+              <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+              <Text style={styles.approvedText}>Estudio Completado</Text>
+            </View>
+            <View style={styles.approvedInfo}>
+              <Ionicons name="information-circle" size={14} color="#6B7280" />
+              <Text style={styles.approvedInfoText}>
+                Beneficiario aprobado y listo para recibir apoyos
+              </Text>
+            </View>
+          </View>
+        ) : (
+          // OTROS ESTADOS (inactivo, rechazado, etc.)
+          <View style={styles.disabledStudyContainer}>
+            <View style={styles.disabledStudyButton}>
+              <Ionicons name="close-circle" size={16} color="#EF4444" />
+              <Text style={styles.disabledStudyButtonText}>Estudio No Disponible</Text>
+            </View>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
@@ -386,19 +429,81 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   studyButton: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "rgba(33, 150, 243, 0.1)",
-  paddingHorizontal: 16,
-  paddingVertical: 10,
-  borderRadius: 8,
-  marginTop: 12,
-  gap: 8,
-},
-studyButtonText: {
-  fontSize: 14,
-  color: "#2196F3",
-  fontWeight: "600",
-},
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(33, 150, 243, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 12,
+    gap: 8,
+  },
+  studyButtonText: {
+    fontSize: 14,
+    color: "#2196F3",
+    fontWeight: "600",
+  },
+  disabledStudyContainer: {
+    marginTop: 12,
+  },
+  disabledStudyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(156, 163, 175, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  disabledStudyButtonText: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    fontWeight: "600",
+  },
+  disabledStudyInfo: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    textAlign: "center",
+    marginTop: 6,
+    fontStyle: "italic",
+  },
+  approvedContainer: {
+    marginTop: 12,
+    gap: 8,
+  },
+  approvedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.3)",
+  },
+  approvedText: {
+    fontSize: 14,
+    color: "#10B981",
+    fontWeight: "600",
+  },
+  approvedInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(107, 114, 128, 0.05)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 6,
+  },
+  approvedInfoText: {
+    fontSize: 12,
+    color: "#6B7280",
+    textAlign: "center",
+    flex: 1,
+  },
 });

@@ -48,45 +48,57 @@ export default function StaffList({ navigation }: any) {
     }
 
     // Filtro por estado
-    if (filterStatus !== "todos") {
-      filtered = filtered.filter(
-        (item) => item.status?.toLowerCase() === filterStatus.toLowerCase()
-      );
-    }
+      if (filterStatus !== "todos") {
+    filtered = filtered.filter((item) => {
+      const itemStatus = item.status?.toLowerCase();
+      
+      switch (filterStatus) {
+        case "aprobado":
+          return itemStatus === "aprobado" || itemStatus === "activo";
+        case "pendiente":
+          return itemStatus === "pendiente" || itemStatus === "evaluación";
+        case "inactivo":
+          return itemStatus === "inactivo" || itemStatus === "rechazado";
+        default:
+          return true;
+      }
+    });
+  }
 
     setFilteredStaff(filtered);
   }, [searchText, staff, filterStatus]);
 
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "activo":
-      case "aprobado":
-        return "#10B981";
-      case "pendiente":
-        return "#F59E0B";
-      case "inactivo":
-      case "rechazado":
-        return "#EF4444";
-      default:
-        return "#6B7280";
-    }
-  };
+  switch (status?.toLowerCase()) {
+    case "activo":
+    case "aprobado":
+      return "#10B981";
+    case "evaluación":
+    case "pendiente":
+      return "#F59E0B";
+    case "inactivo":
+    case "rechazado":
+      return "#EF4444";
+    default:
+      return "#6B7280";
+  }
+};
 
-  const getStatusIcon = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "activo":
-      case "aprobado":
-        return "checkmark-circle";
-      case "pendiente":
-        return "time";
-      case "inactivo":
-      case "rechazado":
-        return "close-circle";
-      default:
-        return "help-circle";
-    }
-  };
-
+const getStatusIcon = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case "activo":
+    case "aprobado":
+      return "checkmark-circle";
+    case "evaluación":
+    case "pendiente":
+      return "time";
+    case "inactivo":
+    case "rechazado":
+      return "close-circle";
+    default:
+      return "help-circle";
+  }
+};
   const validateStaff = async (id: string, name: string) => {
     Alert.alert(
       "Confirmar aprobación",
@@ -120,7 +132,7 @@ export default function StaffList({ navigation }: any) {
 
   const getStatsbyStatus = () => {
     const aprobados = staff.filter(s => s.status?.toLowerCase() === "aprobado").length;
-    const pendientes = staff.filter(s => s.status?.toLowerCase() === "pendiente").length;
+    const pendientes = staff.filter(s => s.status?.toLowerCase() === "pendiente" ||  s.status?.toLowerCase()=== "evaluación").length;
     const rechazados = staff.filter(s => s.status?.toLowerCase() === "rechazado" || s.status?.toLowerCase() === "inactivo").length;
     
     return { aprobados, pendientes, rechazados };
@@ -184,7 +196,7 @@ export default function StaffList({ navigation }: any) {
       </View>
 
       {/* Footer con acciones */}
-      {item.status?.toLowerCase() === "pendiente" && (
+      {(item.status?.toLowerCase() === "evaluación" || item.status?.toLowerCase() === "pendiente") && (
         <View style={styles.cardFooter}>
           <TouchableOpacity
             style={styles.approveButton}

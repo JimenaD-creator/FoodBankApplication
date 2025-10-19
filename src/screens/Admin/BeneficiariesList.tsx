@@ -52,14 +52,16 @@ export default function BeneficiariesList({ navigation }: any) {
     switch (status?.toLowerCase()) {
       case "activo":
       case "aprobado":
-        return "#4CAF50";
+        return "#10B981";
+      case "evaluación":
+        return "#2196F3";
       case "pendiente":
-        return "#FF9800";
+        return "#F59E0B";
       case "inactivo":
       case "rechazado":
-        return "#E53E3E";
+        return "#EF4444";
       default:
-        return "#718096";
+        return "#6B7280";
     }
   };
 
@@ -68,6 +70,8 @@ export default function BeneficiariesList({ navigation }: any) {
       case "activo":
       case "aprobado":
         return "checkmark-circle";
+      case "evaluación":
+        return "document-text-outline";
       case "pendiente":
         return "time-outline";
       case "inactivo":

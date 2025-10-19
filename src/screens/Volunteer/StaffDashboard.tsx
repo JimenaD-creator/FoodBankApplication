@@ -28,6 +28,7 @@ export default function StaffDashboard({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userStatus, setUserStatus] = useState(""); // Nuevo estado para el status del usuario
 
   useEffect(() => {
     loadDashboardData();
@@ -38,7 +39,7 @@ export default function StaffDashboard({ navigation }: any) {
       const user = auth.currentUser;
       if (!user) return;
 
-      // Obtener nombre del usuario
+      // Obtener datos del usuario incluyendo el status
       const userSnapshot = await getDocs(
         query(collection(db, "users"), where("__name__", "==", user.uid))
       );
@@ -46,9 +47,16 @@ export default function StaffDashboard({ navigation }: any) {
       if (!userSnapshot.empty) {
         const userData = userSnapshot.docs[0].data();
         setUserName(userData.fullName || "Voluntario");
+        setUserStatus(userData.status || "pendiente"); // Guardar el estado del usuario
       }
 
-      // Buscar entregas asignadas a este voluntario
+      // Si el usuario no está aprobado, no cargar más datos
+      if (userStatus && (userStatus.toLowerCase() === "pendiente" || userStatus.toLowerCase() === "evaluación")) {
+        setLoading(false);
+        return;
+      }
+
+      // Buscar entregas asignadas a este voluntario (solo si está aprobado)
       const deliveriesSnapshot = await getDocs(collection(db, "scheduledDeliveries"));
       
       const assignedToMe = deliveriesSnapshot.docs
@@ -110,13 +118,7 @@ export default function StaffDashboard({ navigation }: any) {
       setStats({
         totalAssignments: assignedToMe.length,
         communitiesCount: uniqueCommunities.size,
-        beneficiariesCount: totalBeneficiaries, // ✅ Ahora cuenta solo beneficiarios de comunidades asignadas
-      });
-
-      console.log("📊 Estadísticas finales:", {
-        entregas: assignedToMe.length,
-        comunidades: uniqueCommunities.size,
-        beneficiarios: totalBeneficiaries
+        beneficiariesCount: totalBeneficiaries,
       });
 
     } catch (error) {
@@ -148,6 +150,11 @@ export default function StaffDashboard({ navigation }: any) {
     });
   };
 
+  // Función para verificar si el usuario está pendiente de validación
+  const isPendingValidation = () => {
+    return userStatus && (userStatus.toLowerCase() === "pendiente" || userStatus.toLowerCase() === "evaluación");
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -156,6 +163,100 @@ export default function StaffDashboard({ navigation }: any) {
     );
   }
 
+  // Si el usuario está pendiente de validación, mostrar pantalla de espera
+  if (isPendingValidation()) {
+    return (
+      <View style={styles.container}>
+        {/* Header */}
+        <ImageBackground 
+          source={require('../../../assets/background.jpg')}
+          style={styles.headerBackground}
+          resizeMode="cover"
+        >
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Image 
+                source={require('../../../assets/logo_no_background.png')} 
+                style={styles.headerLogo}
+                resizeMode="contain"
+              />
+              <View>
+                <Text style={styles.greetingText}>Hola,</Text>
+                <Text style={styles.userName}>{userName}</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={styles.avatarContainer}
+              onPress={() => navigation.navigate("ProfileScreen")}
+            >
+              <Image
+                source={require("../../../assets/usuario.png")} 
+                style={styles.avatar}
+              />
+            </TouchableOpacity>
+          </View>
+        </ImageBackground>
+
+        {/* Contenido de validación pendiente */}
+        <ScrollView
+          style={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          contentContainerStyle={styles.pendingContainer}
+        >
+          <View style={styles.pendingCard}>
+            <View style={styles.pendingIconContainer}>
+              <Ionicons name="time" size={64} color="#F59E0B" />
+            </View>
+            
+            <Text style={styles.pendingTitle}>Validación en Proceso</Text>
+            
+            <Text style={styles.pendingMessage}>
+              Tu cuenta está siendo revisada por el administrador. 
+              Una vez aprobada, podrás acceder a todas las funciones de la aplicación.
+            </Text>
+
+            <View style={styles.pendingInfo}>
+              <Ionicons name="information-circle" size={20} color="#3B82F6" />
+              <Text style={styles.pendingInfoText}>
+                Estado actual: {userStatus}
+              </Text>
+            </View>
+
+            <View style={styles.pendingTips}>
+              <Text style={styles.pendingTipsTitle}>¿Qué puedes hacer mientras?</Text>
+              
+              <View style={styles.tipItem}>
+                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                <Text style={styles.tipText}>Revisa que tus datos estén completos en tu perfil</Text>
+              </View>
+              
+              <View style={styles.tipItem}>
+                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                <Text style={styles.tipText}>Familiarízate con la aplicación</Text>
+              </View>
+              
+              <View style={styles.tipItem}>
+                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                <Text style={styles.tipText}>Contacta al administrador si tienes dudas</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={onRefresh}
+            >
+              <Ionicons name="refresh" size={20} color="#3B82F6" />
+              <Text style={styles.refreshButtonText}>Actualizar estado</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Dashboard normal para usuarios aprobados
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -194,12 +295,11 @@ export default function StaffDashboard({ navigation }: any) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Stats cards */}
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: '#E8F5E9' }]}>
             <Ionicons name="calendar" size={24} color="#4CAF50" />
             <Text style={styles.statValue}>{stats.totalAssignments}</Text>
-            <Text style={styles.statLabel}>Entregas asignadas</Text>
+            <Text style={styles.statLabel}>Entregas</Text>
           </View>
 
           <View style={[styles.statCard, { backgroundColor: '#E3F2FD' }]}>
@@ -333,6 +433,7 @@ export default function StaffDashboard({ navigation }: any) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -573,5 +674,99 @@ const styles = StyleSheet.create({
   actionSubtitle: {
     fontSize: 13,
     color: "#718096",
+  },
+
+  // Estilos para la pantalla de validación pendiente
+  pendingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  pendingCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    width: "100%",
+  },
+  pendingIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#FEF3C7",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  pendingTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  pendingMessage: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  pendingInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 8,
+  },
+  pendingInfoText: {
+    fontSize: 14,
+    color: "#1E40AF",
+    fontWeight: "600",
+  },
+  pendingTips: {
+    width: "100%",
+    marginBottom: 24,
+  },
+  pendingTipsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    marginBottom: 12,
+  },
+  tipItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 8,
+  },
+  tipText: {
+    fontSize: 14,
+    color: "#4B5563",
+    flex: 1,
+  },
+  refreshButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#3B82F6",
+  },
+  refreshButtonText: {
+    fontSize: 16,
+    color: "#3B82F6",
+    fontWeight: "600",
   },
 });

@@ -76,12 +76,7 @@ export default function DeliveryAssistanceScreen({ navigation, route }: any) {
       }
     })(),
 
-    beneficiaryName: Array.isArray(deliveryData.beneficiary) 
-    ? deliveryData.beneficiary
-        .map((b: any) => b?.name)
-        .filter(Boolean)
-        .join(", ") || "Sin asignar"
-    : "Sin asignar",
+     beneficiaryName: deliveryData.beneficiary?.name || "Sin asignar",
 
     address: deliveryData.municipio ? String(deliveryData.municipio) : "No especificado",
     community: deliveryData.communityName ? String(deliveryData.communityName) : "No especificado",

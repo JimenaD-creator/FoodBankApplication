@@ -207,11 +207,22 @@ export default function DeliveryDetails({ route, navigation }: any) {
             {/* Añade este DetailItem después de la sección de hora */}
 <View style={styles.detailItem}>
   <View style={[styles.detailIconContainer, { backgroundColor: '#E0F2FE' }]}>
-    <Ionicons name="person-outline" size={20} color="#0EA5E9" />
+    <Ionicons name="people-outline" size={20} color="#0EA5E9" />
   </View>
   <View style={styles.detailTextContainer}>
-    <Text style={styles.detailLabel}>Voluntario</Text>
-    <Text style={styles.detailValue}>{getVolunteersText(delivery.volunteers)}</Text>
+    <Text style={styles.detailLabel}>Voluntario(s)</Text>
+    {delivery.volunteers && delivery.volunteers.length > 0 ? (
+      <View style={styles.volunteersList}>
+        {delivery.volunteers.map((volunteer, index) => (
+          <View key={volunteer.id} style={styles.volunteerItem}>
+            <Ionicons name="person" size={14} color="#4CAF50" />
+            <Text style={styles.volunteerName}>{volunteer.name}</Text>
+          </View>
+        ))}
+      </View>
+    ) : (
+      <Text style={styles.detailValue}>No asignado</Text>
+    )}
   </View>
 </View>
           </View>
@@ -659,5 +670,19 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.9)",
     fontSize: 13,
     fontWeight: "500",
+  },
+   volunteersList: {
+    marginTop: 4,
+  },
+  volunteerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+    gap: 6,
+  },
+  volunteerName: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontWeight: "600",
   },
 });
