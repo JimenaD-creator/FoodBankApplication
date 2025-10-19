@@ -115,7 +115,7 @@ export default function DeliveryListScreen({ navigation }: any) {
 
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'completada' || statusLower === 'entregada') return '#4CAF50';
+    if (statusLower === 'entregado' || statusLower === 'Entregado') return '#FF9800';
     if (statusLower === 'en camino') return '#FF9800';
     if (statusLower === 'programada') return '#2196F3';
     return '#718096';
@@ -123,7 +123,7 @@ export default function DeliveryListScreen({ navigation }: any) {
 
   const getStatusBgColor = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'completada' || statusLower === 'entregada') return 'rgba(76, 175, 80, 0.1)';
+    if (statusLower === 'entregado' || statusLower === 'Entregado') return 'rgba(255, 235, 153, 0.95)';
     if (statusLower === 'en camino') return 'rgba(255, 152, 0, 0.1)';
     if (statusLower === 'programada') return 'rgba(33, 150, 243, 0.1)';
     return 'rgba(113, 128, 150, 0.1)';
@@ -131,7 +131,7 @@ export default function DeliveryListScreen({ navigation }: any) {
 
   const getStatusIcon = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'completada' || statusLower === 'entregada') return 'checkmark-circle';
+    if (statusLower === 'entregado' || statusLower === 'Entregado') return 'checkmark-circle';
     if (statusLower === 'en camino') return 'car';
     if (statusLower === 'programada') return 'calendar';
     return 'time';
@@ -142,7 +142,7 @@ export default function DeliveryListScreen({ navigation }: any) {
   deliveries: (beneficiary.deliveries || []).filter((d: any) => {
     if (filter === 'todas') return true;
     if (filter === 'programadas') return d.status?.toLowerCase() === 'programada';
-    if (filter === 'completadas') return d.status?.toLowerCase() === 'completada' || d.status?.toLowerCase() === 'entregado';
+    if (filter === 'completadas') return d.status?.toLowerCase() === 'Entregado' || d.status?.toLowerCase() === 'entregado';
     return true;
   })
 })).filter((b: any) => (b.deliveries || []).length > 0);
