@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, RefreshControl } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { collection, query, where, getDocs, orderBy, onSnapshot } from "firebase/firestore"
+import { collection, query, where, getDocs, orderBy, onSnapshot, doc, getDoc } from "firebase/firestore"
 import { auth, db } from "../firebaseconfig"
-import { hasAcceptedPrivacyPolicy } from "../../services/privacyService"
+import { useNavigation } from "@react-navigation/native"
+import type { NavigationProp } from "../../../App"
 
 interface Delivery {
   id: string
@@ -14,18 +15,27 @@ interface Delivery {
   deliveryDate: any
   volunteers: { id: string; name: string }[]
   products: any
-  beneficiary : { id: string }
+  beneficiary: { id: string }
   status: "Programada" | "En camino" | "Completada"
 }
 
-export default function BeneficiaryDashboard({ navigation }: any) {
+interface UserData {
+  status: string;
+  community: string;
+}
+
+// Define the specific navigation props for this component
+type BeneficiaryDashboardNavigationProp = NavigationProp;
+
+export default function BeneficiaryDashboard() {
+  const navigation = useNavigation<BeneficiaryDashboardNavigationProp>()
   const [deliveries, setDeliveries] = useState<Delivery[]>([])
   const [userCommunity, setUserCommunity] = useState<string>("")
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [userName, setUserName] = useState<string>("")
-
-  
+  const [userStatus, setUserStatus] = useState<string>("")
+  const [hasCompletedForm, setHasCompletedForm] = useState<boolean>(false)
 
   useEffect(() => {
     let unsubscribe: any
@@ -48,16 +58,25 @@ export default function BeneficiaryDashboard({ navigation }: any) {
 
       setUserName(user.displayName || "Beneficiario")
 
-      // Obtener comunidad del usuario
+      // Obtener datos del usuario
       const userDoc = await getDocs(query(collection(db, "users"), where("__name__", "==", user.uid)))
 
       if (!userDoc.empty) {
-        const userData = userDoc.docs[0].data()
+        const userData = userDoc.docs[0].data() as UserData
         const community = userData.community
+        const status = userData.status || "Pendiente"
+        
         setUserCommunity(community)
+        setUserStatus(status)
 
-        const unsubscribe = loadDeliveries(user.uid)
-        return unsubscribe
+        // Verificar si el usuario ya completó el formulario
+        await checkFormCompletion(user.uid)
+
+        // Solo cargar entregas si el usuario no está pendiente
+        if (status !== "Pendiente") {
+          const unsubscribe = loadDeliveries(user.uid)
+          return unsubscribe
+        }
       }
     } catch (error) {
       console.error("Error cargando datos:", error)
@@ -66,13 +85,22 @@ export default function BeneficiaryDashboard({ navigation }: any) {
     }
   }
 
+  const checkFormCompletion = async (userId: string) => {
+    try {
+      const formDoc = await getDoc(doc(db, "pre_socioNutritionalForms", userId))
+      setHasCompletedForm(formDoc.exists())
+    } catch (error) {
+      console.error("Error verificando formulario:", error)
+      setHasCompletedForm(false)
+    }
+  }
+
   const loadDeliveries = (userId: string) => {
     const q = query(
       collection(db, "scheduledDeliveries"),
       where("beneficiary.id", "==", userId),
-      orderBy("deliveryDate", "asc")
-    );
-
+      orderBy("deliveryDate", "asc"),
+    )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const now = new Date()
@@ -119,11 +147,24 @@ export default function BeneficiaryDashboard({ navigation }: any) {
         return "#2196F3"
       case "En camino":
         return "#FF9800"
-      case "Entregado":
+      case "Completada":
         return "#4CAF50"
       default:
         return "#718096"
     }
+  }
+
+  // Navigation handlers with proper typing
+  const handleDeliveryDetails = (delivery: Delivery) => {
+    navigation.navigate("DeliveryDetails", { delivery })
+  }
+
+  const handleProfilePress = () => {
+    navigation.navigate("ProfileScreen")
+  }
+
+  const handlePreStudyForm = () => {
+    navigation.navigate("PreStudyForm")
   }
 
   if (loading) {
@@ -134,8 +175,13 @@ export default function BeneficiaryDashboard({ navigation }: any) {
     )
   }
 
-  // Próxima entrega
-  const nextDelivery = deliveries[0]
+  // Lógica para determinar qué mostrar
+  const showFormOnly = userStatus === "Pendiente" && !hasCompletedForm;
+  const showContactMessage = userStatus === "Evaluación";
+  const showDeliveries = userStatus === "Aprobado";
+
+  // Próxima entrega (solo si no está pendiente)
+  const nextDelivery = showDeliveries ? deliveries[0] : null;
 
   return (
     <View style={styles.container}>
@@ -150,7 +196,7 @@ export default function BeneficiaryDashboard({ navigation }: any) {
             <Ionicons name="home" size={28} color="#4CAF50" />
             <Text style={styles.title}>Mis Entregas</Text>
           </View>
-          <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate("ProfileScreen")}>
+          <TouchableOpacity style={styles.avatarContainer} onPress={handleProfilePress}>
             <Ionicons name="person-circle" size={40} color="#E53E3E" />
           </TouchableOpacity>
         </View>
@@ -162,6 +208,9 @@ export default function BeneficiaryDashboard({ navigation }: any) {
         <View style={styles.welcomeTextContainer}>
           <Text style={styles.welcomeTitle}>Hola, {userName} 👋</Text>
           <Text style={styles.welcomeSubtitle}>{userCommunity || "No asignada"}</Text>
+          <Text style={styles.statusText}>
+            Estado: {userStatus === "Pendiente" ? "Pendiente": userStatus === "Evaluación" ? "Evaluación" : "Activo"}
+          </Text>
         </View>
       </View>
 
@@ -169,73 +218,109 @@ export default function BeneficiaryDashboard({ navigation }: any) {
         style={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Próxima entrega */}
-        {nextDelivery && (
-          <TouchableOpacity
-            style={[styles.deliveryCard, { borderLeftColor: getStatusColor(nextDelivery.status) }]}
-            onPress={() => navigation.navigate("DeliveryDetails", { delivery: nextDelivery })}
-          >
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(nextDelivery.status) }]}>
-              <Text style={styles.statusText}>{nextDelivery.status}</Text>
-            </View>
-
-            <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>Próxima entrega</Text>
-            <Text>
-              {nextDelivery.communityName}, {nextDelivery.municipio}
+        {/* CASO 1: Usuario pendiente sin formulario */}
+        {showFormOnly && (
+          <View style={styles.formOnlyContainer}>
+            <Ionicons name="document-text-outline" size={80} color="#E53E3E" />
+            <Text style={styles.formOnlyTitle}>Complete su formulario inicial</Text>
+            <Text style={styles.formOnlySubtitle}>
+              Para comenzar a recibir sus entregas, necesitamos que complete el estudio socio-nutricional inicial.
             </Text>
-            <Text>
-              {formatDate(nextDelivery.deliveryDate)} | {formatTime(nextDelivery.deliveryDate)}
-            </Text>
-            <TouchableOpacity
-              style={{ marginTop: 10, alignSelf: "flex-start" }}
-              onPress={() => navigation.navigate("DeliveryDetails", { delivery: nextDelivery })}
-            >
-              <Text style={{ color: "#2196F3", fontWeight: "600" }}>Ver detalles</Text>
+            <TouchableOpacity style={styles.primaryButton} onPress={handlePreStudyForm}>
+              <Text style={styles.primaryButtonText}>Llenar formulario</Text>
             </TouchableOpacity>
-          </TouchableOpacity>
+          </View>
         )}
 
-        {/* Lista de otras entregas */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Otras entregas</Text>
-          {deliveries.length > 1 && (
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{deliveries.length - 1}</Text>
+        {/* CASO 2: Usuario pendiente con formulario completado */}
+        {showContactMessage && (
+          <View style={styles.contactMessageContainer}>
+            <Ionicons name="time-outline" size={80} color="#FF9800" />
+            <Text style={styles.contactMessageTitle}>Formulario completado</Text>
+            <Text style={styles.contactMessageSubtitle}>
+              Hemos recibido su formulario. Nos pondremos en contacto con usted pronto para continuar con el proceso.
+            </Text>
+            <View style={styles.contactInfo}>
+              <Ionicons name="information-circle" size={20} color="#2196F3" />
+              <Text style={styles.contactInfoText}>
+                Estado: En revisión
+              </Text>
             </View>
-          )}
-        </View>
-
-        {deliveries.length <= 1 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="calendar-outline" size={64} color="#E2E8F0" />
-            <Text style={styles.emptyStateTitle}>No hay más entregas programadas</Text>
           </View>
-        ) : (
-          deliveries.slice(1).map((delivery) => (
-            <View key={delivery.id} style={[styles.deliveryCard, { borderLeftColor: getStatusColor(delivery.status) }]}>
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
-                <Text style={styles.statusText}>{delivery.status}</Text>
-              </View>
-              <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>
-                {delivery.communityName}, {delivery.municipio}
-              </Text>
-              <Text>
-                {formatDate(delivery.deliveryDate)} | {formatTime(delivery.deliveryDate)}
-              </Text>
-              {delivery.products && Object.keys(delivery.products).length > 0 && (
+        )}
+
+        {/* CASO 3: Usuario activo - Mostrar entregas normal */}
+        {showDeliveries && (
+          <>
+            {/* Próxima entrega */}
+            {nextDelivery && (
+              <TouchableOpacity
+                style={[styles.deliveryCard, { borderLeftColor: getStatusColor(nextDelivery.status) }]}
+                onPress={() => handleDeliveryDetails(nextDelivery)}
+              >
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(nextDelivery.status) }]}>
+                  <Text style={styles.statusText}>{nextDelivery.status}</Text>
+                </View>
+
+                <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>Próxima entrega</Text>
+                <Text>
+                  {nextDelivery.communityName}, {nextDelivery.municipio}
+                </Text>
+                <Text>
+                  {formatDate(nextDelivery.deliveryDate)} | {formatTime(nextDelivery.deliveryDate)}
+                </Text>
                 <TouchableOpacity
-                  style={{ marginTop: 8 }}
-                  onPress={() => navigation.navigate("DeliveryDetails", { delivery })}
+                  style={{ marginTop: 10, alignSelf: "flex-start" }}
+                  onPress={() => handleDeliveryDetails(nextDelivery)}
                 >
-                  <Text style={{ color: "#2196F3", fontWeight: "600" }}>Ver contenido de la despensa</Text>
+                  <Text style={{ color: "#2196F3", fontWeight: "600" }}>Ver detalles</Text>
                 </TouchableOpacity>
+              </TouchableOpacity>
+            )}
+
+            {/* Lista de otras entregas */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Otras entregas</Text>
+              {deliveries.length > 1 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{deliveries.length - 1}</Text>
+                </View>
               )}
             </View>
-          ))
+
+            {deliveries.length <= 1 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="calendar-outline" size={64} color="#E2E8F0" />
+                <Text style={styles.emptyStateTitle}>No hay más entregas programadas</Text>
+              </View>
+            ) : (
+              deliveries.slice(1).map((delivery) => (
+                <View key={delivery.id} style={[styles.deliveryCard, { borderLeftColor: getStatusColor(delivery.status) }]}>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
+                    <Text style={styles.statusText}>{delivery.status}</Text>
+                  </View>
+                  <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>
+                    {delivery.communityName}, {delivery.municipio}
+                  </Text>
+                  <Text>
+                    {formatDate(delivery.deliveryDate)} | {formatTime(delivery.deliveryDate)}
+                  </Text>
+                  {delivery.products && Object.keys(delivery.products).length > 0 && (
+                    <TouchableOpacity
+                      style={{ marginTop: 8 }}
+                      onPress={() => handleDeliveryDetails(delivery)}
+                    >
+                      <Text style={{ color: "#2196F3", fontWeight: "600" }}>Ver contenido de la despensa</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))
+            )}
+          </>
         )}
-        <TouchableOpacity style={[styles.button]} onPress={() => navigation.navigate("PreStudyForm")}>
-          <Text style={styles.button}>Realizar estudio inicial</Text>
-        </TouchableOpacity>
+
+        {/* Botón del formulario (siempre visible excepto cuando ya está pendiente con formulario) */}
+        
       </ScrollView>
     </View>
   )
@@ -273,6 +358,7 @@ const styles = StyleSheet.create({
   welcomeTextContainer: { flex: 1 },
   welcomeTitle: { fontSize: 16, color: "#2D3748", fontWeight: "600" },
   welcomeSubtitle: { fontSize: 14, color: "#718096" },
+  statusText: { fontSize: 12, color: "#718096", marginTop: 2 },
   content: { flex: 1, paddingHorizontal: 20 },
   sectionHeader: { flexDirection: "row", alignItems: "center", marginTop: 24, marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#2D3748" },
@@ -306,14 +392,104 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
   },
-  statusText: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  button: {
-    backgroundColor: "#FF6B6B",
-    paddingVertical: 10,
+  
+  // Nuevos estilos para los diferentes estados
+  formOnlyContainer: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 30,
+    borderRadius: 16,
+    marginTop: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  formOnlyTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#2D3748",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  formOnlySubtitle: {
+    fontSize: 16,
+    color: "#718096",
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 22,
+  },
+  
+  contactMessageContainer: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 30,
+    borderRadius: 16,
+    marginTop: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  contactMessageTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#2D3748",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  contactMessageSubtitle: {
+    fontSize: 16,
+    color: "#718096",
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 22,
+  },
+  contactInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E3F2FD",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    gap: 8,
+  },
+  contactInfoText: {
+    fontSize: 14,
+    color: "#1976D2",
+    fontWeight: "500",
+  },
+  
+  // Botones
+  primaryButton: {
+    backgroundColor: "#E53E3E",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
     borderRadius: 12,
     alignItems: "center",
-    textDecorationColor: "#fff",
+    marginTop: 20,
+    width: "100%",
+  },
+  primaryButtonText: {
     color: "#fff",
     fontSize: 18,
+    fontWeight: "bold",
+  },
+  secondaryButton: {
+    backgroundColor: "#4CAF50",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 15,
+    borderRadius: 12,
+    marginTop: 20,
+    gap: 8,
+  },
+  secondaryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 })

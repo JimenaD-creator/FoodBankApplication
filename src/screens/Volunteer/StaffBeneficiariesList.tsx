@@ -248,7 +248,7 @@ export default function StaffBeneficiariesList({ navigation }: any) {
         <FlatList
           data={filteredBeneficiaries}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item: any) => item.id}
           ListEmptyComponent={renderEmptyComponent}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}

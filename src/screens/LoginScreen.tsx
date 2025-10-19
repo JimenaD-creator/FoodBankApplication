@@ -1,108 +1,114 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ImageBackground, ActivityIndicator } from 'react-native';
-import { useState } from 'react';
-import { auth, db } from './firebaseconfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { Ionicons } from '@expo/vector-icons';
-import { hasAcceptedPrivacyPolicy } from '../services/privacyService';
+"use client"
+
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ImageBackground,
+  ActivityIndicator,
+} from "react-native"
+import { useState } from "react"
+import { auth, db } from "./firebaseconfig"
+import { signInWithEmailAndPassword } from "firebase/auth"
+import { doc, getDoc } from "firebase/firestore"
+import { Ionicons } from "@expo/vector-icons"
+import { hasAcceptedPrivacyPolicy } from "../services/privacyService"
+import { useUserRole } from "../hooks/UserContext"
 
 // Servicio de tokens seguro
-import { TokenService } from '../services/secureTokenService';
+import { TokenService } from "../services/secureTokenService"
 
 export default function LoginScreen({ navigation }: any) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const { setRole } = useUserRole()
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Por favor ingresa correo y contraseña");
-      return;
+      Alert.alert("Error", "Por favor ingresa correo y contraseña")
+      return
     }
 
-    setLoading(true);
-    
+    setLoading(true)
+
     try {
       // 1. Hacer login
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
 
       // 2. Obtener datos del usuario
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      
+      const userDoc = await getDoc(doc(db, "users", user.uid))
+
       if (!userDoc.exists()) {
-        Alert.alert("Error", "Datos de usuario no encontrados");
-        setLoading(false);
-        return;
+        Alert.alert("Error", "Datos de usuario no encontrados")
+        setLoading(false)
+        return
       }
 
-      const userData = userDoc.data();
-      
+      const userData = userDoc.data()
+
       // 3. Guardar tokens de forma segura (sin mostrar modal)
-      const firebaseToken = await user.getIdToken();
-      await TokenService.saveTokens(firebaseToken, `refresh_token_${user.uid}`);
-      
-      console.log('✅ Login exitoso - Usuario:', user.email, 'Rol:', userData.role);
+      const firebaseToken = await user.getIdToken()
+      await TokenService.saveTokens(firebaseToken, `refresh_token_${user.uid}`)
+
+      console.log("✅ Login exitoso - Usuario:", user.email, "Rol:", userData.role)
+      setRole(userData.role)
 
       // 4. Redirigir directamente según el rol
       switch (userData.role) {
-        case 'admin':
-          navigation.replace('AdminDashboard');
-          break;
-        case 'staff':
-          navigation.replace('StaffDashboard');
-          break;
-        case 'beneficiary':
-          // Revisar si aceptó la política de privacidad usando UID
-          const accepted = await hasAcceptedPrivacyPolicy(user.uid);
+        case "admin":
+          navigation.replace("Main")
+          break
+        case "staff":
+          navigation.replace("Main")
+          break
+        case "beneficiary":
+          const accepted = await hasAcceptedPrivacyPolicy(user.uid)
           if (accepted) {
-            navigation.replace("BeneficiaryDashboard");
+            // 🔹 Navigate to Main (with navbar visible)
+            navigation.replace("Main")
           } else {
             navigation.replace("PrivacyPolicyScreen", {
-              uid: user.uid, // pasamos UID
-              onAccept: () => navigation.replace("BeneficiaryDashboard")
-            });
+              uid: user.uid,
+              onAccept: () => navigation.replace("Main"),
+            })
           }
-          break;
+          break
         default:
-          Alert.alert("Error", "Rol de usuario no reconocido: " + userData.role);
-          setLoading(false);
-          return;
+          Alert.alert("Error", "Rol de usuario no reconocido: " + userData.role)
+          setLoading(false)
+          return
+      }
+    } catch (error: any) {
+      console.error("❌ Error en login:", error)
+      let errorMessage = "Error al iniciar sesión"
+
+      if (error.code === "auth/invalid-email") {
+        errorMessage = "Email inválido"
+      } else if (error.code === "auth/user-not-found") {
+        errorMessage = "Usuario no encontrado"
+      } else if (error.code === "auth/wrong-password") {
+        errorMessage = "Contraseña incorrecta"
+      } else if (error.code === "auth/network-request-failed") {
+        errorMessage = "Error de conexión"
       }
 
-    } catch (error: any) {
-      console.error('❌ Error en login:', error);
-      let errorMessage = "Error al iniciar sesión";
-      
-      if (error.code === 'auth/invalid-email') {
-        errorMessage = "Email inválido";
-      } else if (error.code === 'auth/user-not-found') {
-        errorMessage = "Usuario no encontrado";
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = "Contraseña incorrecta";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Error de conexión";
-      }
-      
-      Alert.alert("Error", errorMessage);
-      setLoading(false);
+      Alert.alert("Error", errorMessage)
+      setLoading(false)
     }
   }
 
   return (
-    <ImageBackground
-      source={require('../../assets/background.jpg')}
-      style={styles.container}
-      resizeMode="cover"
-    >
+    <ImageBackground source={require("../../assets/background.jpg")} style={styles.container} resizeMode="cover">
       <View style={styles.overlay} />
       <View style={styles.logoContainer}>
-        <Image 
-          source={require('../../assets/logo_no_background.png')} 
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Image source={require("../../assets/logo_no_background.png")} style={styles.logo} resizeMode="contain" />
       </View>
 
       <View style={styles.formContainer}>
@@ -135,36 +141,25 @@ export default function LoginScreen({ navigation }: any) {
                 secureTextEntry={!showPassword}
                 editable={!loading}
               />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="#718096"
-                />
+              <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#718096" />
               </TouchableOpacity>
             </View>
           </View>
 
-          <TouchableOpacity 
-            style={[styles.button, loading && styles.buttonDisabled]} 
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Iniciar Sesión</Text>
-            )}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Iniciar Sesión</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} disabled={loading}>
             <Text style={styles.forgotPassword}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("Profile")} disabled={loading}>
+          <TouchableOpacity onPress={() => navigation.navigate("UserTypeScreen")} disabled={loading}>
             <Text style={styles.signUp}>
               ¿No tienes cuenta? <Text style={styles.signUpLink}>Regístrate</Text>
             </Text>
@@ -172,25 +167,25 @@ export default function LoginScreen({ navigation }: any) {
         </View>
       </View>
     </ImageBackground>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    height: '100%',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+    width: "100%",
+    height: "100%",
+    justifyContent: "flex-start",
+    alignItems: "center",
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
   },
   logoContainer: {
     flex: 0.3,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingTop: 40,
   },
   logo: {
@@ -199,9 +194,9 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 0.7,
-    width: '100%',
+    width: "100%",
     paddingHorizontal: 30,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
   },
   pinkContainer: {
     backgroundColor: "#FED7E2",
@@ -220,7 +215,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#2D3748",
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   input: {
     flex: 1,
@@ -243,7 +238,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   forgotPassword: {
     textAlign: "center",
@@ -259,7 +254,7 @@ const styles = StyleSheet.create({
   },
   signUpLink: {
     color: "#E53E3E",
-    fontWeight: '600',
+    fontWeight: "600",
   },
   eyeIcon: {
     padding: 8,
@@ -269,13 +264,13 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#fff",
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     paddingHorizontal: 12,
     height: 50,
-  }
-});
+  },
+})

@@ -213,12 +213,13 @@ export default function DeliveryDetails({ route, navigation }: any) {
     <Text style={styles.detailLabel}>Voluntario(s)</Text>
     {delivery.volunteers && delivery.volunteers.length > 0 ? (
       <View style={styles.volunteersList}>
-        {delivery.volunteers.map((volunteer, index) => (
-          <View key={volunteer.id} style={styles.volunteerItem}>
-            <Ionicons name="person" size={14} color="#4CAF50" />
-            <Text style={styles.volunteerName}>{volunteer.name}</Text>
-          </View>
-        ))}
+        {delivery.volunteers.map((volunteer: { id: string; name: string }, index: number) => (
+  <View key={volunteer.id} style={styles.volunteerItem}>
+    <Ionicons name="person" size={14} color="#4CAF50" />
+    <Text style={styles.volunteerName}>{volunteer.name}</Text>
+  </View>
+))}
+
       </View>
     ) : (
       <Text style={styles.detailValue}>No asignado</Text>

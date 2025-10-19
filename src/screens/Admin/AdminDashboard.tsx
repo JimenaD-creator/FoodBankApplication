@@ -1,175 +1,169 @@
-import React from "react";
-import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ImageBackground } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { collection, getDocs, onSnapshot, query, where } from "firebase/firestore";
-import {db} from '../firebaseconfig';
-import { useSecureScreen } from '../../hooks/useSecureScreen'
+"use client"
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { collection, onSnapshot } from "firebase/firestore"
+import { db } from "../firebaseconfig"
+import { useSecureScreen } from "../../hooks/useSecureScreen"
+import { useNavigation } from "@react-navigation/native"
+import type { NavigationProp } from "../../../App"
 
-export default function AdminDashboard({ navigation }: any) {
-  const [deliveriesCount, setDeliveriesCount] = useState(0);
-  const [beneficiariesCount, setBeneficiariesCount] = useState(0);
-  const [volunteersCount, setVolunteersCount] = useState(0);
-  const [communitiesCount, setCommunitiesCount] = useState(0);
+export default function AdminDashboard() {
+  const navigation = useNavigation<NavigationProp>()
+  const [deliveriesCount, setDeliveriesCount] = useState(0)
+  const [beneficiariesCount, setBeneficiariesCount] = useState(0)
+  const [volunteersCount, setVolunteersCount] = useState(0)
+  const [communitiesCount, setCommunitiesCount] = useState(0)
 
   useEffect(() => {
     const unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-      const allUsers = snapshot.docs.map(doc => doc.data());
-    setBeneficiariesCount(allUsers.filter(u => u.role === "beneficiary").length);
-    setVolunteersCount(allUsers.filter(u => u.role === "staff").length);
-  });
+      const allUsers = snapshot.docs.map((doc) => doc.data())
+      setBeneficiariesCount(allUsers.filter((u) => u.role === "beneficiary").length)
+      setVolunteersCount(allUsers.filter((u) => u.role === "staff").length)
+    })
 
-const unsubscribeDeliveries = onSnapshot(collection(db, "scheduledDeliveries"), (snapshot) => {
-  // Contar directamente los documentos - cada uno es una entrega individual
-  const totalEntregas = snapshot.size;
-  console.log("📦 Total de entregas programadas:", totalEntregas);
-  setDeliveriesCount(totalEntregas);
-});
-  const unsubscribeCommunities = onSnapshot(collection(db, "communities"), (snapshot) => {
-    setCommunitiesCount(snapshot.size);
-  });
+    const unsubscribeDeliveries = onSnapshot(collection(db, "scheduledDeliveries"), (snapshot) => {
+      const totalEntregas = snapshot.size
+      setDeliveriesCount(totalEntregas)
+    })
 
-  return () => {
-    unsubscribeUsers();
-    unsubscribeDeliveries();
-    unsubscribeCommunities();
-  };
-    
+    const unsubscribeCommunities = onSnapshot(collection(db, "communities"), (snapshot) => {
+      setCommunitiesCount(snapshot.size)
+    })
+
+    return () => {
+      unsubscribeUsers()
+      unsubscribeDeliveries()
+      unsubscribeCommunities()
+    }
   }, [])
 
   useSecureScreen({
-      showAlert: true,
-      alertMessage: 'Las capturas de pantalla están deshabilitadas por seguridad.'
-    });
-  
+    showAlert: true,
+    alertMessage: "Las capturas de pantalla están deshabilitadas por seguridad.",
+  })
+
   return (
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Image 
-              source={require('../../../assets/logo_no_background.png')} 
-              style={styles.headerLogo}
-              resizeMode="contain"
-            />
-            <Text style={styles.title}>Dashboard</Text>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.iconButton}>
-              <View style={styles.notificationBadge}>
-                <Ionicons name="notifications" size={24} color="#E53E3E" />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.avatarContainer}
-              onPress={() => navigation.navigate("ProfileScreen")}
-            >
-              <Image
-                source={require("../../../assets/usuario.png")} 
-                style={styles.avatar}
-              />
-            </TouchableOpacity>
-          </View>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Image
+            source={require("../../../assets/logo_no_background.png")}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>Dashboard</Text>
         </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.iconButton}>
+            <View style={styles.notificationBadge}>
+              <Ionicons name="notifications" size={24} color="#E53E3E" />
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate("ProfileScreen")}>
+            <Image source={require("../../../assets/usuario.png")} style={styles.avatar} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        {/* Contenido principal */}
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.sectionTitle}>📊 Métricas principales</Text>
+      {/* Contenido principal */}
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.sectionTitle}>📊 Métricas principales</Text>
 
-          <View style={styles.grid}>
-            <TouchableOpacity
-              style={[styles.card, styles.beneficiariesCard]}
-              onPress={() => navigation.navigate("BeneficiariesList")}
-            >
-              <View style={styles.cardIcon}>
-                <Ionicons name="people" size={32} color="#4CAF50" />
-              </View>
-              <Text style={styles.cardValue}>{beneficiariesCount}</Text>
-              <Text style={styles.cardLabel}>Beneficiarios</Text>
-            </TouchableOpacity>
-
-           <TouchableOpacity
-            style={[styles.card, styles.deliveriesCard]}
-              onPress={() => navigation.navigate("DeliveriesList")}
-           >
-              <View style={styles.cardIcon}>
-                <Ionicons name="cube" size={32} color="#2196F3" />
-              </View>
-              <Text style={styles.cardValue}>{deliveriesCount}</Text>
-              <Text style={styles.cardLabel}>Despensas</Text>
-              </TouchableOpacity>
-            
-            
+        <View style={styles.grid}>
           <TouchableOpacity
-              style={[styles.card, styles.staffCard]}
-              onPress={() => navigation.navigate("StaffList")}
-
+            style={[styles.card, styles.beneficiariesCard]}
+            onPress={() => navigation.navigate("BeneficiariesList")}
           >
-              <View style={styles.cardIcon}>
-                <Ionicons name="person" size={32} color="#FF9800" />
-              </View>
-              <Text style={styles.cardValue}>{volunteersCount}</Text>
-              <Text style={styles.cardLabel}>Staff activo</Text>
-          
+            <View style={styles.cardIcon}>
+              <Ionicons name="people" size={32} color="#4CAF50" />
+            </View>
+            <Text style={styles.cardValue}>{beneficiariesCount}</Text>
+            <Text style={styles.cardLabel}>Beneficiarios</Text>
           </TouchableOpacity>
 
-           <TouchableOpacity
-           style={[styles.card, styles.communitiesCard]}
-              onPress={() => navigation.navigate("CommunitiesManagement")}
-           >
-              <View style={styles.cardIcon}>
-                <Ionicons name="location" size={32} color="#E53E3E" />
-              </View>
-              <Text style={styles.cardValue}>{communitiesCount}</Text>
-              <Text style={styles.cardLabel}>Comunidades</Text>
-            
-            </TouchableOpacity>
-          </View>
-          
-          {/* Acciones rápidas */}
-          <Text style={styles.sectionTitle}>⚡ Acciones rápidas</Text>
+          <TouchableOpacity
+            style={[styles.card, styles.deliveriesCard]}
+            onPress={() => navigation.navigate("DeliveriesList")}
+          >
+            <View style={styles.cardIcon}>
+              <Ionicons name="cube" size={32} color="#2196F3" />
+            </View>
+            <Text style={styles.cardValue}>{deliveriesCount}</Text>
+            <Text style={styles.cardLabel}>Despensas</Text>
+          </TouchableOpacity>
 
-          <View style={styles.quickActionContainer}>
+          <TouchableOpacity style={[styles.card, styles.staffCard]} onPress={() => navigation.navigate("StaffList")}>
+            <View style={styles.cardIcon}>
+              <Ionicons name="person" size={32} color="#FF9800" />
+            </View>
+            <Text style={styles.cardValue}>{volunteersCount}</Text>
+            <Text style={styles.cardLabel}>Staff activo</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.quickActionButton, { backgroundColor: '#2196F3' }]}
-          onPress={() => navigation.navigate("StandardTemplate")}
-        >
-          
-          <Ionicons name="cube" size={28} color="#fff" />
-          <Text style={styles.quickActionText}>Gestionar Despensa</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.card, styles.communitiesCard]}
+            onPress={() => navigation.navigate("CommunitiesManagement")}
+          >
+            <View style={styles.cardIcon}>
+              <Ionicons name="location" size={32} color="#E53E3E" />
+            </View>
+            <Text style={styles.cardValue}>{communitiesCount}</Text>
+            <Text style={styles.cardLabel}>Comunidades</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.quickActionButton, { backgroundColor: '#FF9800' }]}
-          onPress={() => navigation.navigate("DeliveryManagement")}
-        >
+        {/* Acciones rápidas */}
+        <Text style={styles.sectionTitle}>⚡ Acciones rápidas</Text>
+
+        <View style={styles.quickActionContainer}>
+          <TouchableOpacity
+            style={[styles.quickActionButton, { backgroundColor: "#2196F3" }]}
+            onPress={() => navigation.navigate("StandardTemplate")}
+          >
+            <Ionicons name="cube" size={28} color="#fff" />
+            <Text style={styles.quickActionText}>Gestionar Despensa</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickActionButton, { backgroundColor: "#FF9800" }]}
+            onPress={() => navigation.navigate("DeliveryManagement")}
+          >
             <Ionicons name="calendar" size={28} color="#fff" />
-          <Text style={styles.quickActionText}>Programar Entregas</Text>
-        </TouchableOpacity>
+            <Text style={styles.quickActionText}>Programar Entregas</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.quickActionButton, { backgroundColor: '#E53E3E' }]}
-          onPress={() => navigation.navigate("Registrar", { userType: "admin", isFromAdminDashboard: true })}
-        >
+          <TouchableOpacity
+            style={[styles.quickActionButton, { backgroundColor: "#E53E3E" }]}
+            onPress={() => navigation.navigate("Registrar", { userType: "admin", isFromAdminDashboard: true })}
+          >
             <Ionicons name="person-add" size={28} color="#fff" />
-          <Text style={styles.quickActionText}>Registrar</Text>
-        </TouchableOpacity>
-      </View>         
-    </ScrollView>
-  </View>
-  );
+            <Text style={styles.quickActionText}>Registrar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickActionButton, { backgroundColor: "#9C27B0" }]}
+            onPress={() => navigation.navigate("EditScreen")}
+          >
+            <Ionicons name="create" size={28} color="#fff" />
+            <Text style={styles.quickActionText}>Editar Aviso</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   container: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   header: {
     flexDirection: "row",
@@ -365,31 +359,30 @@ const styles = StyleSheet.create({
   quickActionContainer: {
     gap: 12,
     marginBottom: 20,
-
   },
   quickActionButton: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  paddingVertical: 16,
-  paddingHorizontal: 20,
-  borderRadius: 12,
-  gap: 10,
-},
-quickActionText: {
-  color: "#ffffff",
-  fontSize: 15,
-  fontWeight: "600",
-},
-quickActionTitle: {
-  fontSize: 16,
-  fontWeight: "bold",
-  color: "#2D3748",
-  marginBottom: 4,
-},
-quickActionSubtitle: {
-  fontSize: 12,
-  color: "#718096",
-  textAlign: "center",
-},
-});
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 10,
+  },
+  quickActionText: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  quickActionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#2D3748",
+    marginBottom: 4,
+  },
+  quickActionSubtitle: {
+    fontSize: 12,
+    color: "#718096",
+    textAlign: "center",
+  },
+})

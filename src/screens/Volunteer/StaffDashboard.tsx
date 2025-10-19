@@ -1,97 +1,109 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, RefreshControl, Image } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { auth, db } from "../firebaseconfig";
+"use client"
 
-interface AssignedDelivery {
-  id: string;
-  communityName: string;
-  municipio: string;
-  deliveryDate: any;
-  status: string;
-  familias: number;
-  beneficiary: {
-    name: string
-  }
+import { useState, useEffect } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ImageBackground,
+  RefreshControl,
+  Image,
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { collection, query, where, getDocs } from "firebase/firestore"
+import { auth, db } from "../firebaseconfig"
+import { useNavigation } from "@react-navigation/native"
+import type { NavigationProp } from "../../../App"
+
+export interface AssignedDelivery { // <-- Added 'export' here
+ id: string
+ communityName: string
+ municipio: string
+ deliveryDate: any
+ status: string
+ familias: number
+ beneficiary: {
+  name: string
+ }
 }
 
-export default function StaffDashboard({ navigation }: any) {
-  const [assignedDeliveries, setAssignedDeliveries] = useState<AssignedDelivery[]>([]);
-  const [todayDeliveries, setTodayDeliveries] = useState<AssignedDelivery[]>([]);
-  const [upcomingDeliveries, setUpcomingDeliveries] = useState<AssignedDelivery[]>([]);
+export default function StaffDashboard() {
+  const navigation = useNavigation<NavigationProp>()
+  const [assignedDeliveries, setAssignedDeliveries] = useState<AssignedDelivery[]>([])
+  const [todayDeliveries, setTodayDeliveries] = useState<AssignedDelivery[]>([])
+  const [upcomingDeliveries, setUpcomingDeliveries] = useState<AssignedDelivery[]>([])
   const [stats, setStats] = useState({
     totalAssignments: 0,
     communitiesCount: 0,
     beneficiariesCount: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [userStatus, setUserStatus] = useState(""); // Nuevo estado para el status del usuario
+  })
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [userName, setUserName] = useState("")
+  const [userStatus, setUserStatus] = useState("") // Nuevo estado para el status del usuario
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    loadDashboardData()
+  }, [])
 
   const loadDashboardData = async () => {
     try {
-      const user = auth.currentUser;
-      if (!user) return;
+      const user = auth.currentUser
+      if (!user) return
 
       // Obtener datos del usuario incluyendo el status
-      const userSnapshot = await getDocs(
-        query(collection(db, "users"), where("__name__", "==", user.uid))
-      );
-      
+      const userSnapshot = await getDocs(query(collection(db, "users"), where("__name__", "==", user.uid)))
+
       if (!userSnapshot.empty) {
-        const userData = userSnapshot.docs[0].data();
-        setUserName(userData.fullName || "Voluntario");
-        setUserStatus(userData.status || "pendiente"); // Guardar el estado del usuario
+        const userData = userSnapshot.docs[0].data()
+        setUserName(userData.fullName || "Voluntario")
+        setUserStatus(userData.status || "pendiente") // Guardar el estado del usuario
       }
 
       // Si el usuario no está aprobado, no cargar más datos
       if (userStatus && (userStatus.toLowerCase() === "pendiente" || userStatus.toLowerCase() === "evaluación")) {
-        setLoading(false);
-        return;
+        setLoading(false)
+        return
       }
 
       // Buscar entregas asignadas a este voluntario (solo si está aprobado)
-      const deliveriesSnapshot = await getDocs(collection(db, "scheduledDeliveries"));
-      
-      const assignedToMe = deliveriesSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(delivery => 
-          delivery.volunteers?.some((v: any) => v.id === user.uid)
-        );
+      const deliveriesSnapshot = await getDocs(collection(db, "scheduledDeliveries"))
 
-      setAssignedDeliveries(assignedToMe);
+      const assignedToMe = deliveriesSnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }) as any)
+        .filter((delivery) => delivery.volunteers?.some((v: any) => v.id === user.uid))
+
+      setAssignedDeliveries(assignedToMe)
 
       // Separar entregas de hoy y próximas
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
 
-      const todayList = assignedToMe.filter(d => {
-        const deliveryDate = d.deliveryDate.toDate();
-        return deliveryDate >= today && deliveryDate < tomorrow;
-      });
+      const todayList = assignedToMe.filter((d) => {
+        const deliveryDate = d.deliveryDate.toDate()
+        return deliveryDate >= today && deliveryDate < tomorrow
+      })
 
-      const upcomingList = assignedToMe.filter(d => {
-        const deliveryDate = d.deliveryDate.toDate();
-        return deliveryDate >= tomorrow && d.status !== "Entregado";
-      }).sort((a, b) => a.deliveryDate.toDate() - b.deliveryDate.toDate());
+      const upcomingList = assignedToMe
+        .filter((d) => {
+          const deliveryDate = d.deliveryDate.toDate()
+          return deliveryDate >= tomorrow && d.status !== "Entregado"
+        })
+        .sort((a, b) => a.deliveryDate.toDate() - b.deliveryDate.toDate())
 
-      setTodayDeliveries(todayList);
-      setUpcomingDeliveries(upcomingList);
+      setTodayDeliveries(todayList)
+      setUpcomingDeliveries(upcomingList)
 
       // ✅ CORREGIDO: Contar solo beneficiarios de las comunidades asignadas al staff
-      const uniqueCommunityNames = Array.from(new Set(assignedToMe.map(d => d.communityName)));
-      
-      console.log("🏘️ Comunidades asignadas:", uniqueCommunityNames);
-      
-      let totalBeneficiaries = 0;
+      const uniqueCommunityNames = Array.from(new Set(assignedToMe.map((d) => d.communityName)))
+
+      console.log("🏘️ Comunidades asignadas:", uniqueCommunityNames)
+
+      let totalBeneficiaries = 0
 
       if (uniqueCommunityNames.length > 0) {
         // Para cada comunidad, contar los beneficiarios
@@ -99,68 +111,67 @@ export default function StaffDashboard({ navigation }: any) {
           try {
             const beneficiariesSnapshot = await getDocs(
               query(
-                collection(db, "users"), 
+                collection(db, "users"),
                 where("role", "==", "beneficiary"),
-                where("community", "==", communityName)
-              )
-            );
-            totalBeneficiaries += beneficiariesSnapshot.size;
-            console.log(`👥 Beneficiarios en ${communityName}:`, beneficiariesSnapshot.size);
+                where("community", "==", communityName),
+              ),
+            )
+            totalBeneficiaries += beneficiariesSnapshot.size
+            console.log(`👥 Beneficiarios en ${communityName}:`, beneficiariesSnapshot.size)
           } catch (error) {
-            console.error(`Error contando beneficiarios de ${communityName}:`, error);
+            console.error(`Error contando beneficiarios de ${communityName}:`, error)
           }
         }
       }
 
       // Calcular estadísticas
-      const uniqueCommunities = new Set(assignedToMe.map(d => d.communityName));
+      const uniqueCommunities = new Set(assignedToMe.map((d) => d.communityName))
 
       setStats({
         totalAssignments: assignedToMe.length,
         communitiesCount: uniqueCommunities.size,
         beneficiariesCount: totalBeneficiaries,
-      });
-
+      })
     } catch (error) {
-      console.error("Error cargando datos:", error);
+      console.error("Error cargando datos:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await loadDashboardData();
-    setRefreshing(false);
-  };
+    setRefreshing(true)
+    await loadDashboardData()
+    setRefreshing(false)
+  }
 
   const formatDate = (timestamp: any) => {
-    const date = timestamp.toDate();
-    return date.toLocaleDateString('es-MX', {
-      day: 'numeric',
-      month: 'short'
-    });
-  };
+    const date = timestamp.toDate()
+    return date.toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "short",
+    })
+  }
 
   const formatTime = (timestamp: any) => {
-    const date = timestamp.toDate();
-    return date.toLocaleTimeString('es-MX', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+    const date = timestamp.toDate()
+    return date.toLocaleTimeString("es-MX", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
 
   // Función para verificar si el usuario está pendiente de validación
   const isPendingValidation = () => {
-    return userStatus && (userStatus.toLowerCase() === "pendiente" || userStatus.toLowerCase() === "evaluación");
-  };
+    return userStatus && (userStatus.toLowerCase() === "pendiente" || userStatus.toLowerCase() === "evaluación")
+  }
 
   if (loading) {
     return (
       <View style={styles.container}>
         <Text style={styles.loadingText}>Cargando...</Text>
       </View>
-    );
+    )
   }
 
   // Si el usuario está pendiente de validación, mostrar pantalla de espera
@@ -168,15 +179,15 @@ export default function StaffDashboard({ navigation }: any) {
     return (
       <View style={styles.container}>
         {/* Header */}
-        <ImageBackground 
-          source={require('../../../assets/background.jpg')}
+        <ImageBackground
+          source={require("../../../assets/background.jpg")}
           style={styles.headerBackground}
           resizeMode="cover"
         >
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <Image 
-                source={require('../../../assets/logo_no_background.png')} 
+              <Image
+                source={require("../../../assets/logo_no_background.png")}
                 style={styles.headerLogo}
                 resizeMode="contain"
               />
@@ -185,14 +196,8 @@ export default function StaffDashboard({ navigation }: any) {
                 <Text style={styles.userName}>{userName}</Text>
               </View>
             </View>
-            <TouchableOpacity 
-              style={styles.avatarContainer}
-              onPress={() => navigation.navigate("ProfileScreen")}
-            >
-              <Image
-                source={require("../../../assets/usuario.png")} 
-                style={styles.avatar}
-              />
+            <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate("ProfileScreen")}>
+              <Image source={require("../../../assets/usuario.png")} style={styles.avatar} />
             </TouchableOpacity>
           </View>
         </ImageBackground>
@@ -200,75 +205,68 @@ export default function StaffDashboard({ navigation }: any) {
         {/* Contenido de validación pendiente */}
         <ScrollView
           style={styles.content}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.pendingContainer}
         >
           <View style={styles.pendingCard}>
             <View style={styles.pendingIconContainer}>
               <Ionicons name="time" size={64} color="#F59E0B" />
             </View>
-            
+
             <Text style={styles.pendingTitle}>Validación en Proceso</Text>
-            
+
             <Text style={styles.pendingMessage}>
-              Tu cuenta está siendo revisada por el administrador. 
-              Una vez aprobada, podrás acceder a todas las funciones de la aplicación.
+              Tu cuenta está siendo revisada por el administrador. Una vez aprobada, podrás acceder a todas las
+              funciones de la aplicación.
             </Text>
 
             <View style={styles.pendingInfo}>
               <Ionicons name="information-circle" size={20} color="#3B82F6" />
-              <Text style={styles.pendingInfoText}>
-                Estado actual: {userStatus}
-              </Text>
+              <Text style={styles.pendingInfoText}>Estado actual: {userStatus}</Text>
             </View>
 
             <View style={styles.pendingTips}>
               <Text style={styles.pendingTipsTitle}>¿Qué puedes hacer mientras?</Text>
-              
+
               <View style={styles.tipItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#10B981" />
                 <Text style={styles.tipText}>Revisa que tus datos estén completos en tu perfil</Text>
               </View>
-              
+
               <View style={styles.tipItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#10B981" />
                 <Text style={styles.tipText}>Familiarízate con la aplicación</Text>
               </View>
-              
+
               <View style={styles.tipItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#10B981" />
                 <Text style={styles.tipText}>Contacta al administrador si tienes dudas</Text>
               </View>
             </View>
 
-            <TouchableOpacity 
-              style={styles.refreshButton}
-              onPress={onRefresh}
-            >
+            <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
               <Ionicons name="refresh" size={20} color="#3B82F6" />
               <Text style={styles.refreshButtonText}>Actualizar estado</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </View>
-    );
+    )
   }
 
   // Dashboard normal para usuarios aprobados
   return (
     <View style={styles.container}>
       {/* Header */}
-      <ImageBackground 
-        source={require('../../../assets/background.jpg')}
+      <ImageBackground
+        source={require("../../../assets/background.jpg")}
         style={styles.headerBackground}
         resizeMode="cover"
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Image 
-              source={require('../../../assets/logo_no_background.png')} 
+            <Image
+              source={require("../../../assets/logo_no_background.png")}
               style={styles.headerLogo}
               resizeMode="contain"
             />
@@ -277,38 +275,30 @@ export default function StaffDashboard({ navigation }: any) {
               <Text style={styles.userName}>{userName}</Text>
             </View>
           </View>
-          <TouchableOpacity 
-            style={styles.avatarContainer}
-            onPress={() => navigation.navigate("ProfileScreen")}
-          >
-            <Image
-              source={require("../../../assets/usuario.png")} 
-              style={styles.avatar}
-            />
+          <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate("ProfileScreen")}>
+            <Image source={require("../../../assets/usuario.png")} style={styles.avatar} />
           </TouchableOpacity>
         </View>
       </ImageBackground>
 
       <ScrollView
         style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: '#E8F5E9' }]}>
+          <View style={[styles.statCard, { backgroundColor: "#E8F5E9" }]}>
             <Ionicons name="calendar" size={24} color="#4CAF50" />
             <Text style={styles.statValue}>{stats.totalAssignments}</Text>
             <Text style={styles.statLabel}>Entregas</Text>
           </View>
 
-          <View style={[styles.statCard, { backgroundColor: '#E3F2FD' }]}>
+          <View style={[styles.statCard, { backgroundColor: "#E3F2FD" }]}>
             <Ionicons name="location" size={24} color="#2196F3" />
             <Text style={styles.statValue}>{stats.communitiesCount}</Text>
             <Text style={styles.statLabel}>Comunidades</Text>
           </View>
 
-          <View style={[styles.statCard, { backgroundColor: '#FFF3E0' }]}>
+          <View style={[styles.statCard, { backgroundColor: "#FFF3E0" }]}>
             <Ionicons name="people" size={24} color="#FF9800" />
             <Text style={styles.statValue}>{stats.beneficiariesCount}</Text>
             <Text style={styles.statLabel}>Beneficiarios</Text>
@@ -332,9 +322,7 @@ export default function StaffDashboard({ navigation }: any) {
                 <View style={styles.todayDeliveryHeader}>
                   <View style={styles.todayDeliveryTime}>
                     <Ionicons name="time" size={18} color="#E53E3E" />
-                    <Text style={styles.todayDeliveryTimeText}>
-                      {formatTime(delivery.deliveryDate)}
-                    </Text>
+                    <Text style={styles.todayDeliveryTimeText}>{formatTime(delivery.deliveryDate)}</Text>
                   </View>
                   <View style={[styles.urgentBadge]}>
                     <Text style={styles.urgentBadgeText}>¡HOY!</Text>
@@ -343,9 +331,7 @@ export default function StaffDashboard({ navigation }: any) {
                 <Text style={styles.todayDeliveryLocation}>
                   {delivery.communityName}, {delivery.municipio}
                 </Text>
-                <Text style={styles.todayDeliveryFamilies}>
-                  {delivery.beneficiary.name} 
-                </Text>
+                <Text style={styles.todayDeliveryFamilies}>{delivery.beneficiary.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -368,27 +354,19 @@ export default function StaffDashboard({ navigation }: any) {
                 onPress={() => navigation.navigate("StaffDelivery", { delivery })}
               >
                 <View style={styles.deliveryDateBadge}>
-                  <Text style={styles.deliveryDateText}>
-                    {formatDate(delivery.deliveryDate)}
-                  </Text>
+                  <Text style={styles.deliveryDateText}>{formatDate(delivery.deliveryDate)}</Text>
                 </View>
                 <View style={styles.deliveryInfo}>
                   <View style={styles.deliveryLocation}>
                     <Ionicons name="location" size={18} color="#4CAF50" />
-                    <Text style={styles.deliveryLocationText}>
-                      {delivery.communityName}
-                    </Text>
+                    <Text style={styles.deliveryLocationText}>{delivery.communityName}</Text>
                   </View>
                   <Text style={styles.deliveryMunicipio}>{delivery.municipio}</Text>
                   <View style={styles.deliveryMeta}>
                     <Ionicons name="time-outline" size={16} color="#718096" />
-                    <Text style={styles.deliveryMetaText}>
-                      {formatTime(delivery.deliveryDate)}
-                    </Text>
+                    <Text style={styles.deliveryMetaText}>{formatTime(delivery.deliveryDate)}</Text>
                     <Ionicons name="people-outline" size={16} color="#718096" style={{ marginLeft: 12 }} />
-                    <Text style={styles.todayDeliveryFamilies}>
-                      {delivery.beneficiary.name} 
-                    </Text>
+                    <Text style={styles.todayDeliveryFamilies}>{delivery.beneficiary.name}</Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
@@ -431,9 +409,8 @@ export default function StaffDashboard({ navigation }: any) {
 </View>
       </ScrollView>
     </View>
-  );
+  )
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -675,7 +652,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#718096",
   },
-
   // Estilos para la pantalla de validación pendiente
   pendingContainer: {
     flex: 1,
@@ -769,4 +745,4 @@ const styles = StyleSheet.create({
     color: "#3B82F6",
     fontWeight: "600",
   },
-});
+})

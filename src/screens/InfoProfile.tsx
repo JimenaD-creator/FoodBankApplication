@@ -160,7 +160,7 @@ export default function ProfileScreen({ navigation }: any){
                                     <TextInput
                                         style={styles.input}
                                         value={userData.nombre}
-                                        onChangeText={(text) => setUserData({ ...userData, nombre: text })}
+                                        onChangeText={(text:string) => setUserData({ ...userData, nombre: text })}
                                         placeholder=" "
                                     />
                                 </View>
@@ -171,7 +171,7 @@ export default function ProfileScreen({ navigation }: any){
                                     <TextInput
                                         style={styles.input}
                                         value={userData.apellido}
-                                        onChangeText={(text) => setUserData({ ...userData, apellido: text })}
+                                        onChangeText={(text:string) => setUserData({ ...userData, apellido: text })}
                                         placeholder=" "
                                     />
                                 </View>
@@ -198,7 +198,7 @@ export default function ProfileScreen({ navigation }: any){
                                 <TextInput
                                     style={styles.phoneInput}
                                     value={userData.phone}
-                                    onChangeText={(text) => setUserData({ ...userData, phone: text })}
+                                    onChangeText={(text:string) => setUserData({ ...userData, phone: text })}
                                     keyboardType="phone-pad"
                                     placeholder=" "
                                 />

@@ -1,10 +1,26 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ImageBackground, ScrollView } from "react-native";
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  TextInput, 
+  TouchableOpacity, 
+  Alert, 
+  Image, 
+  ImageBackground, 
+  ScrollView,
+  Modal,
+  FlatList,
+  ActivityIndicator
+} from "react-native";
 import { useState, useEffect } from "react";
 import { auth, db } from "./firebaseconfig";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import { doc, setDoc, collection, getDocs } from "firebase/firestore";
-import { saveSecureData } from "../services/secureStorage";
 
+interface Community {
+  id: string;
+  nombre: string;
+}
 
 export default function RegisterScreen({ route, navigation }: any) {
   const { userType, isFromAdminDashboard } = route.params || {}; 
@@ -23,6 +39,15 @@ export default function RegisterScreen({ route, navigation }: any) {
   // Estados para manejo de admins
   const [isFirstAdmin, setIsFirstAdmin] = useState(false);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
+
+  // Estados para el dropdown de comunidades
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [showCommunityDropdown, setShowCommunityDropdown] = useState(false);
+  const [communitiesLoading, setCommunitiesLoading] = useState(false);
+
+  // Estado para loading del registro
+  const [registerLoading, setRegisterLoading] = useState(false);
+
   const getThemeColors = () => {
     switch (userType) {
       case 'admin':
@@ -73,6 +98,38 @@ export default function RegisterScreen({ route, navigation }: any) {
     }
   }, [userType]);
 
+  // Cargar comunidades al montar el componente
+  useEffect(() => {
+    if (userType === "staff" || userType === "beneficiary") {
+      loadCommunities();
+    }
+  }, [userType]);
+
+  const loadCommunities = async () => {
+    try {
+      setCommunitiesLoading(true);
+      const communitiesSnapshot = await getDocs(collection(db, "communities"));
+      const communitiesList: Community[] = [];
+      
+      communitiesSnapshot.forEach((doc) => {
+        const data = doc.data();
+        communitiesList.push({
+          id: doc.id,
+          nombre: data.nombre || doc.id
+        });
+      });
+
+      // Ordenar alfabéticamente por nombre
+      communitiesList.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      setCommunities(communitiesList);
+    } catch (error) {
+      console.error("Error cargando comunidades:", error);
+      Alert.alert("Error", "No se pudieron cargar las comunidades");
+    } finally {
+      setCommunitiesLoading(false);
+    }
+  };
+
   // Bloquear si alguien quiere registrarse como admin directo y ya existe un SuperAdmin
   useEffect(() => {
     if (!loadingAdmins) {
@@ -91,6 +148,20 @@ export default function RegisterScreen({ route, navigation }: any) {
     }
   }, [userType, isFirstAdmin, isFromAdminDashboard, navigation, loadingAdmins]);
 
+  const handleCommunitySelect = (selectedCommunity: Community) => {
+    setCommunity(selectedCommunity.nombre);
+    setShowCommunityDropdown(false);
+  };
+
+  const renderCommunityItem = ({ item }: { item: Community }) => (
+    <TouchableOpacity
+      style={styles.communityItem}
+      onPress={() => handleCommunitySelect(item)}
+    >
+      <Text style={styles.communityItemText}>{item.nombre}</Text>
+    </TouchableOpacity>
+  );
+
   const handleRegister = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
       Alert.alert("Error", "Todos los campos básicos son obligatorios");
@@ -100,6 +171,14 @@ export default function RegisterScreen({ route, navigation }: any) {
       Alert.alert("Error", "Las contraseñas no coinciden");
       return;
     }
+
+    // Validar comunidad para staff y beneficiarios
+    if ((userType === "staff" || userType === "beneficiary") && !community) {
+      Alert.alert("Error", "Por favor selecciona una comunidad");
+      return;
+    }
+
+    setRegisterLoading(true);
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -137,7 +216,7 @@ export default function RegisterScreen({ route, navigation }: any) {
           userData = {
             ...userData,
             community,
-            familySize,
+            familySize: familySize || "0",
           };
         }
 
@@ -145,12 +224,46 @@ export default function RegisterScreen({ route, navigation }: any) {
         await setDoc(doc(db, "users", user.uid), userData);
       }
 
-      Alert.alert("Éxito", "Usuario registrado correctamente");
-      await saveSecureData("user_uid", user.uid);
-      await saveSecureData("user_role", userType);
-      navigation.navigate("Login");
+      Alert.alert(
+        "✅ Registro Exitoso", 
+        "Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.",
+        [
+          {
+            text: "Ir al Login",
+            onPress: () => navigation.navigate("Login")
+          },
+          {
+            text: "Quedarme aquí",
+            style: "cancel"
+          }
+        ]
+      );
+          await signOut(auth);
+
+      // Limpiar el formulario
+      setFullName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setPhone("");
+      setCommunity("");
+      setFamilySize("");
+
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      console.error("Error en registro:", error);
+      
+      let errorMessage = "Error al registrar usuario";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "Este correo electrónico ya está registrado";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "La contraseña debe tener al menos 6 caracteres";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "El correo electrónico no es válido";
+      }
+      
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setRegisterLoading(false);
     }
   };
 
@@ -211,6 +324,7 @@ export default function RegisterScreen({ route, navigation }: any) {
                   placeholder=""
                   value={fullName}
                   onChangeText={setFullName}
+                  editable={!registerLoading}
                 />
               </View>
 
@@ -223,6 +337,7 @@ export default function RegisterScreen({ route, navigation }: any) {
                   autoCapitalize="none"
                   value={email}
                   onChangeText={setEmail}
+                  editable={!registerLoading}
                 />
               </View>
 
@@ -234,6 +349,7 @@ export default function RegisterScreen({ route, navigation }: any) {
                   keyboardType="phone-pad"
                   value={phone}
                   onChangeText={setPhone}
+                  editable={!registerLoading}
                 />
               </View>
 
@@ -245,6 +361,7 @@ export default function RegisterScreen({ route, navigation }: any) {
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
+                  editable={!registerLoading}
                 />
               </View>
 
@@ -256,6 +373,7 @@ export default function RegisterScreen({ route, navigation }: any) {
                   secureTextEntry
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
+                  editable={!registerLoading}
                 />
               </View>
 
@@ -263,12 +381,15 @@ export default function RegisterScreen({ route, navigation }: any) {
               {(userType === "staff" || userType === "beneficiary") && (
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>Comunidad</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder=""
-                    value={community}
-                    onChangeText={setCommunity}
-                  />
+                  <TouchableOpacity
+                    style={styles.dropdownTrigger}
+                    onPress={() => setShowCommunityDropdown(true)}
+                    disabled={registerLoading}
+                  >
+                    <Text style={community ? styles.dropdownTextSelected : styles.dropdownTextPlaceholder}>
+                      {community || "Selecciona una comunidad"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -281,17 +402,83 @@ export default function RegisterScreen({ route, navigation }: any) {
                     keyboardType="numeric"
                     value={familySize}
                     onChangeText={setFamilySize}
+                    editable={!registerLoading}
                   />
                 </View>
               )}
 
-              <TouchableOpacity style={[styles.button, { backgroundColor: themeColors.buttonBg }]} onPress={handleRegister}>
-                <Text style={styles.buttonText}>Registrarse</Text>
+              <TouchableOpacity 
+                style={[
+                  styles.button, 
+                  { backgroundColor: themeColors.buttonBg },
+                  registerLoading && styles.buttonDisabled
+                ]} 
+                onPress={handleRegister}
+                disabled={registerLoading}
+              >
+                {registerLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>Registrarse</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Enlace para ir al login */}
+              <TouchableOpacity 
+                style={styles.loginLink}
+                onPress={() => navigation.navigate("Login")}
+                disabled={registerLoading}
+              >
+                <Text style={styles.loginLinkText}>
+                  ¿Ya tienes cuenta? <Text style={[styles.loginLinkBold, { color: themeColors.linkColor }]}>Inicia sesión</Text>
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </ScrollView>
+
+      {/* Modal del Dropdown de Comunidades */}
+      <Modal
+        visible={showCommunityDropdown}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCommunityDropdown(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Selecciona una comunidad</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowCommunityDropdown(false)}
+              >
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {communitiesLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={themeColors.buttonBg} />
+                <Text style={styles.loadingText}>Cargando comunidades...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={communities}
+                renderItem={renderCommunityItem}
+                keyExtractor={(item:any) => item.id}
+                style={styles.communitiesList}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>No hay comunidades disponibles</Text>
+                  </View>
+                }
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </ImageBackground>
   );
 }
@@ -333,21 +520,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  greenContainer: {
-    backgroundColor: "rgba(196, 226, 196, 0.95)", 
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 3,
-  },
   containerBox: {
-    // Nuevo estilo para el contenedor con colores dinámicos
     borderRadius: 20,
     padding: 18,
     marginHorizontal: 5,
@@ -375,13 +548,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     textAlign: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#2D3748",
-    textAlign: "center",
-    marginBottom: 20,
   },
   inputContainer: {
     marginBottom: 15,
@@ -419,18 +585,104 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   buttonText: {
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "600",
   },
-  signUp: {
-    textAlign: "center",
-    color: "#2D3748",
-    fontSize: 14,
+  loginLink: {
+    alignItems: 'center',
+    marginTop: 10,
   },
-  signUpLink: {
-    color: "#4CAF50",
-    fontWeight: "600",
+  loginLinkText: {
+    fontSize: 14,
+    color: '#2D3748',
+  },
+  loginLinkBold: {
+    fontWeight: '600',
+  },
+
+  // Estilos para el dropdown de comunidades
+  dropdownTrigger: {
+    height: 45,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  dropdownTextSelected: {
+    fontSize: 16,
+    color: "#2D3748",
+  },
+  dropdownTextPlaceholder: {
+    fontSize: 16,
+    color: "#9CA3AF",
+  },
+
+  // Estilos para el modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    width: "100%",
+    maxHeight: "70%",
+    overflow: "hidden",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#2D3748",
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalCloseText: {
+    fontSize: 20,
+    color: "#6B7280",
+    fontWeight: "bold",
+  },
+  communitiesList: {
+    maxHeight: 400,
+  },
+  communityItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F1F1",
+  },
+  communityItemText: {
+    fontSize: 16,
+    color: "#2D3748",
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#718096",
   },
 });
