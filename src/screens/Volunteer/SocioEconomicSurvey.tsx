@@ -54,6 +54,8 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     gastosAlimentos: 0,
   });
 
+  const [validation, setValidation] = useState(Boolean);
+
   const handleNumberChange = (field: string, increment: boolean) => {
     setFormData(prev => ({
       ...prev,
@@ -92,15 +94,30 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
         status: "Evaluación"
       });
 
+      // Navigate to Step 4 instead of going back
+      setStep(4);
+      
       Alert.alert(
         "Formulario enviado",
-        "Tu solicitud ha sido enviada. Recibirás una notificación cuando sea revisada.",
-        [{ text: "OK", onPress: () => navigation.goBack() }]
+        "Tu información ha sido guardada. Ahora puedes proceder con la validación.",
+        [{ text: "OK" }]
       );
+
     } catch (error) {
       console.error("Error guardando formulario:", error);
       Alert.alert("Error", "No se pudo enviar el formulario");
     }
+  };
+
+  const handleValidation = async () => {
+    try {
+        const deliveryRef = doc(db, "users", origin);
+        await updateDoc(deliveryRef, { status: "Aprobado" });
+        Alert.alert('✅', 'El Status del Beneficiario se ha Actualizado');
+        navigation.goBack();
+      } catch (error) {
+        Alert.alert("❌ Error", "No se pudo actualizar el estado en FireBase.");
+      }
   };
 
   const canContinue = () => {
@@ -404,27 +421,70 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     </View>
   );
 
+  const renderStep4 = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>Validación de Beneficiario</Text>
+      <Text style={styles.stepSubtitle}></Text>
+
+      {/* Validacion de Usuario */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>Apartir de estos Datos, desea validar al Usuario:</Text>
+        <View style={styles.yesNoContainer}>
+          <TouchableOpacity
+            style={[styles.yesNoButton, validation === true && styles.yesNoButtonSelected]}
+            onPress={() => setValidation(true)}
+          >
+            <Text style={[styles.yesNoText, validation === true && styles.yesNoTextSelected]}>Sí</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.yesNoButton, validation === false && styles.yesNoButtonSelected]}
+            onPress={() => setValidation(false)}
+          >
+            <Text style={[styles.yesNoText, validation === false && styles.yesNoTextSelected]}>No</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
+
       {/* Header */}
-      <ImageBackground source={require('../../../assets/background.jpg')} style={styles.headerBackground} resizeMode="cover">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-                      <Ionicons name="arrow-back" size={28} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Formulario Socio-Nutricional</Text>
-        </View>
+            <ImageBackground 
+              source={require('../../../assets/background.jpg')}
+              style={styles.headerBackground}
+              resizeMode="cover"
+            >
+            <View style={styles.header}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+              <Ionicons name="arrow-back" size={24} color="#E53E3E" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Formulario Socio-Nutricional</Text>
+         </View>
       </ImageBackground>
+      
+      {/* Progress bar */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBar}>
+        <View style={[styles.progressFill, { width: `${(step / 4) * 100}%` }]} />
+      </View>
+        <Text style={styles.progressText}>Paso {step} de 4</Text>
+      </View>
 
       {/* Contenido */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
+        {step === 4 && renderStep4()}
 
         {/* Navegación entre pasos */}
         <View style={styles.navigationContainer}>
-          {step > 1 && (
+          {step > 1 && step !== 4 && (
             <TouchableOpacity style={styles.navButton} onPress={() => setStep(step - 1)}>
               <Text style={styles.navButtonText}>Anterior</Text>
             </TouchableOpacity>
@@ -440,7 +500,12 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
           )}
           {step === 3 && (
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>Enviar</Text>
+              <Text style={styles.submitButtonText}>Enviar Información</Text>
+            </TouchableOpacity>
+          )}
+          {step === 4 && (
+            <TouchableOpacity style={styles.submitButton} onPress={handleValidation}>
+              <Text style={styles.submitButtonText}>Concluir Formulario</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -453,8 +518,22 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   scrollContainer: { padding: 16, paddingBottom: 40 },
-  headerBackground: { width: "100%", height: 120 },
-  header: { flexDirection: "row", alignItems: "center", paddingTop: 40, paddingHorizontal: 16 },
+  headerBackground: { width: "100%", height: 150 },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    marginHorizontal: 20,
+    marginTop: 50,
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
   headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold", marginLeft: 16 },
 
   stepContainer: { marginBottom: 20 },
@@ -482,9 +561,62 @@ const styles = StyleSheet.create({
   textInput: { borderWidth: 1, borderColor: "#ccc", borderRadius: 6, padding: 10, minHeight: 60, backgroundColor: "#fff" },
 
   navigationContainer: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
-  navButton: { backgroundColor: "", padding: 12, borderRadius: 6 },
-  navButtonDisabled: { backgroundColor: "#4CAF50" },
-  navButtonText: { color: "#fff", fontWeight: "bold" },
-  submitButton: { flex: 1, backgroundColor: "#4CAF50", padding: 12, borderRadius: 6, alignItems: "center" },
-  submitButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  navButton: { 
+    backgroundColor: "#4CAF50", 
+    padding: 12, 
+    borderRadius: 6 
+  },
+  navButtonDisabled: { 
+    backgroundColor: "#cccccc" 
+  },
+  navButtonText: { 
+    color: "#fff", 
+    fontWeight: "bold" 
+  },
+  submitButton: { 
+    flex: 1, 
+    backgroundColor: "#4CAF50", 
+    padding: 12, 
+    borderRadius: 6, 
+    alignItems: "center" 
+  },
+  submitButtonText: { 
+    color: "#fff", 
+    fontWeight: "bold", 
+    fontSize: 16 
+  },
+  
+  progressContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#4CAF50",
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    color: "#718096",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#E53E3E",
+    flex: 1,
+    textAlign: "center",
+    marginHorizontal: 10,
+  },
+  backButton: {
+    padding: 5,
+  },
 });
