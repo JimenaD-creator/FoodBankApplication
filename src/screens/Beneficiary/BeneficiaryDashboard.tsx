@@ -98,7 +98,7 @@ export default function BeneficiaryDashboard() {
     const q = query(
       collection(db, "scheduledDeliveries"),
       where("beneficiary.id", "==", userId),
-      orderBy("deliveryDate", "desc"), // ✅ Cambiado a "desc" para ver más recientes primero
+      orderBy("deliveryDate", "desc"),
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -107,7 +107,6 @@ export default function BeneficiaryDashboard() {
           id: doc.id,
           ...(doc.data() as Omit<Delivery, "id">),
         }))
-        // ✅ ELIMINADO el filtro que solo mostraba futuras - ahora muestra TODAS
 
       setDeliveries(deliveriesList)
     })
@@ -300,43 +299,38 @@ export default function BeneficiaryDashboard() {
               </TouchableOpacity>
             )}
 
-            {/* ✅ SECCIÓN: Otras entregas - SIEMPRE VISIBLE */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Otras entregas</Text>
-              {upcomingDeliveries.length > 1 && (
-                <View style={styles.countBadge}>
-                  <Text style={styles.countBadgeText}>{upcomingDeliveries.length - 1}</Text>
-                </View>
-              )}
-            </View>
-
-            {upcomingDeliveries.length > 1 ? (
-              upcomingDeliveries.slice(1).map((delivery) => (
-                <View key={delivery.id} style={[styles.deliveryCard, { borderLeftColor: getStatusColor(delivery.status) }]}>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
-                    <Text style={styles.statusText}>{delivery.status}</Text>
+            {/* ✅ SECCIÓN: Otras entregas - SÓLO si hay más de 1 entrega futura */}
+            {upcomingDeliveries.length > 1 && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Otras entregas</Text>
+                  <View style={styles.countBadge}>
+                    <Text style={styles.countBadgeText}>{upcomingDeliveries.length - 1}</Text>
                   </View>
-                  <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>
-                    {delivery.communityName}, {delivery.municipio}
-                  </Text>
-                  <Text>
-                    {formatDate(delivery.deliveryDate)} | {formatTime(delivery.deliveryDate)}
-                  </Text>
-                  {delivery.products && Object.keys(delivery.products).length > 0 && (
-                    <TouchableOpacity
-                      style={{ marginTop: 8 }}
-                      onPress={() => handleDeliveryDetails(delivery)}
-                    >
-                      <Text style={{ color: "#2196F3", fontWeight: "600" }}>Ver contenido de la despensa</Text>
-                    </TouchableOpacity>
-                  )}
                 </View>
-              ))
-            ) : (
-              <View style={styles.emptySection}>
-                <Ionicons name="calendar-outline" size={48} color="#E2E8F0" />
-                <Text style={styles.emptySectionText}>No hay otras entregas programadas</Text>
-              </View>
+
+                {upcomingDeliveries.slice(1).map((delivery) => (
+                  <View key={delivery.id} style={[styles.deliveryCard, { borderLeftColor: getStatusColor(delivery.status) }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
+                      <Text style={styles.statusText}>{delivery.status}</Text>
+                    </View>
+                    <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>
+                      {delivery.communityName}, {delivery.municipio}
+                    </Text>
+                    <Text>
+                      {formatDate(delivery.deliveryDate)} | {formatTime(delivery.deliveryDate)}
+                    </Text>
+                    {delivery.products && Object.keys(delivery.products).length > 0 && (
+                      <TouchableOpacity
+                        style={{ marginTop: 8 }}
+                        onPress={() => handleDeliveryDetails(delivery)}
+                      >
+                        <Text style={{ color: "#2196F3", fontWeight: "600" }}>Ver contenido de la despensa</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </>
             )}
 
             {/* ✅ SECCIÓN: Historial de entregas (pasadas) */}
@@ -374,11 +368,14 @@ export default function BeneficiaryDashboard() {
               </>
             )}
 
-            {/* Mensaje si no hay entregas en absoluto */}
-            {deliveries.length === 0 && (
+            {/* ✅ CORREGIDO: Mensaje si no hay entregas - SÓLO cuando es usuario activo y no tiene NINGUNA entrega */}
+            {showDeliveries && deliveries.length === 0 && (
               <View style={styles.emptyState}>
                 <Ionicons name="calendar-outline" size={64} color="#E2E8F0" />
                 <Text style={styles.emptyStateTitle}>No hay entregas programadas</Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Una vez que se te asignen entregas, aparecerán aquí.
+                </Text>
               </View>
             )}
           </>
@@ -494,7 +491,12 @@ const styles = StyleSheet.create({
     marginTop: 16, 
     textAlign: "center" 
   },
-  // ✅ NUEVO: Estilo para sección vacía
+  emptyStateSubtitle: { 
+    fontSize: 14, 
+    color: "#718096", 
+    marginTop: 8, 
+    textAlign: "center" 
+  },
   emptySection: {
     alignItems: "center",
     paddingVertical: 40,
@@ -619,21 +621,6 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "bold",
-  },
-  secondaryButton: {
-    backgroundColor: "#4CAF50",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 15,
-    borderRadius: 12,
-    marginTop: 20,
-    gap: 8,
-  },
-  secondaryButtonText: {
-    color: "#fff",
-    fontSize: 16,
     fontWeight: "bold",
   },
 
