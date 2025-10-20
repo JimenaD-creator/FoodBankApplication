@@ -83,7 +83,7 @@ export default function EditNoticeScreen() {
         <View style={styles.infoCard}>
           <Ionicons name="information-circle" size={24} color="#2196F3" />
           <Text style={styles.infoText}>
-            Este contenido se mostrará en la sección de avisos de la página principal (Landing2)
+            Este contenido se mostrará en la sección de avisos de la página principal
           </Text>
         </View>
 

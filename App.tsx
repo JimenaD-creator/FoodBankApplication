@@ -145,7 +145,7 @@ export default function App() {
         ) : (
           <>
             <Stack.Screen name="Main" component={MainContainer} />
-
+            <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
             <Stack.Screen name="Registrar" component={RegisterScreen} />
             <Stack.Screen name="StaffDashboard" component={StaffDashboard} />

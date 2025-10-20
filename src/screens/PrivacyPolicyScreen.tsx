@@ -70,11 +70,6 @@ export default function PrivacyPolicyScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'space-between',
-  },
   scroll: {
     flex: 1,
   },
@@ -100,8 +95,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
-});
-=======
+
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
     flexDirection: "row",
@@ -129,4 +123,4 @@ const styles = StyleSheet.create({
   acceptButton: { backgroundColor: "#4CAF50", paddingVertical: 16, borderRadius: 12, alignItems: "center" },
   acceptButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });
->>>>>>> Stashed changes
+

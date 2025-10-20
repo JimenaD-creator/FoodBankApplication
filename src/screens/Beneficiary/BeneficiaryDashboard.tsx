@@ -208,7 +208,7 @@ export default function BeneficiaryDashboard() {
         <View style={styles.welcomeTextContainer}>
           <Text style={styles.welcomeTitle}>Hola, {userName} 👋</Text>
           <Text style={styles.welcomeSubtitle}>{userCommunity || "No asignada"}</Text>
-          <Text style={styles.statusText}>
+          <Text style={styles.status}>
             Estado: {userStatus === "Pendiente" ? "Pendiente": userStatus === "Evaluación" ? "Evaluación" : "Activo"}
           </Text>
         </View>
@@ -258,7 +258,7 @@ export default function BeneficiaryDashboard() {
                 style={[styles.deliveryCard, { borderLeftColor: getStatusColor(nextDelivery.status) }]}
                 onPress={() => handleDeliveryDetails(nextDelivery)}
               >
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(nextDelivery.status) }]}>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(nextDelivery.status)}]}>
                   <Text style={styles.statusText}>{nextDelivery.status}</Text>
                 </View>
 
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   welcomeTextContainer: { flex: 1 },
   welcomeTitle: { fontSize: 16, color: "#2D3748", fontWeight: "600" },
   welcomeSubtitle: { fontSize: 14, color: "#718096" },
-  statusText: { fontSize: 12, color: "#718096", marginTop: 2 },
+  statusText: { fontSize: 12, color: "#fff", marginTop: 2 },
   content: { flex: 1, paddingHorizontal: 20 },
   sectionHeader: { flexDirection: "row", alignItems: "center", marginTop: 24, marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#2D3748" },
@@ -384,6 +384,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     borderLeftWidth: 4,
     borderLeftColor: "#4CAF50",
+  },
+  status: {
+    color: "#718096",
+    fontSize: 12,
+    marginTop: 2,
+
   },
   statusBadge: {
     alignSelf: "flex-start",
