@@ -356,7 +356,7 @@ const getStatusIcon = (status: string) => {
           keyExtractor={(item) => item.id}
           ListEmptyComponent={renderEmptyComponent}
           contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
           refreshing={loading}
           onRefresh={() => {}}
         />
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   },
   filtersContainer: {
     flexDirection: "row",
-    gap: 8,
+    gap: 2,
     marginBottom: 16,
   },
   filterChip: {

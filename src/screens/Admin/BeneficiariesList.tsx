@@ -87,7 +87,11 @@ export default function BeneficiariesList({ navigation }: any) {
     <View style={styles.itemHeader}>
       <View style={styles.nameContainer}>
         <Ionicons name="person" size={20} color="#4CAF50" />
-        <Text style={styles.name}>{item.fullName || "Nombre no definido"}</Text>
+        <View style={styles.nameWrapper}>
+          <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
+            {item.fullName || "Nombre no definido"}
+          </Text>
+        </View>
       </View>
       <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
         <Ionicons 
@@ -102,7 +106,7 @@ export default function BeneficiariesList({ navigation }: any) {
     <View style={styles.infoContainer}>
       <View style={styles.infoRow}>
         <Ionicons name="location-outline" size={16} color="#718096" />
-        <Text style={styles.info}>
+        <Text style={styles.info} numberOfLines={1} ellipsizeMode="tail">
           <Text style={styles.infoLabel}>Comunidad: </Text>
           {item.community || "No definido"}
         </Text>
@@ -125,7 +129,7 @@ export default function BeneficiariesList({ navigation }: any) {
       </View>
     </View>
 
-    {/* NUEVO BOTÓN PARA VER ESTUDIO */}
+    {/* BOTÓN PARA VER ESTUDIO */}
     <TouchableOpacity
       style={styles.studyButton}
       onPress={() => navigation.navigate("BeneficiaryStudyScreen", { beneficiaryId: item.id })}
@@ -135,7 +139,6 @@ export default function BeneficiariesList({ navigation }: any) {
     </TouchableOpacity>
   </TouchableOpacity>
 );
-
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="people-outline" size={64} color="#E2E8F0" />
@@ -268,6 +271,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  nameWrapper: {
+    flex: 1,
+    marginLeft: 8,
+  },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -330,14 +337,16 @@ const styles = StyleSheet.create({
   },
   nameContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     flex: 1,
+    marginRight: 8,
   },
   name: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#2D3748",
     marginLeft: 8,
+     lineHeight: 20,
   },
   statusBadge: {
     flexDirection: "row",
@@ -345,6 +354,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    flexShrink: 0,
   },
   statusText: {
     fontSize: 11,
@@ -364,6 +374,7 @@ const styles = StyleSheet.create({
     color: "#4A5568",
     marginLeft: 8,
     flex: 1,
+    flexShrink: 1, 
   },
   infoLabel: {
     fontWeight: "600",
