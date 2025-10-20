@@ -16,7 +16,7 @@ interface Delivery {
   volunteers: { id: string; name: string }[]
   products: any
   beneficiary: { id: string }
-  status: "Programada" | "En camino" | "Completada"
+  status: "Programada" | "En camino" | "Entregado"
 }
 
 interface UserData {
@@ -24,7 +24,6 @@ interface UserData {
   community: string;
 }
 
-// Define the specific navigation props for this component
 type BeneficiaryDashboardNavigationProp = NavigationProp;
 
 export default function BeneficiaryDashboard() {
@@ -99,17 +98,16 @@ export default function BeneficiaryDashboard() {
     const q = query(
       collection(db, "scheduledDeliveries"),
       where("beneficiary.id", "==", userId),
-      orderBy("deliveryDate", "asc"),
+      orderBy("deliveryDate", "desc"), // ✅ Cambiado a "desc" para ver más recientes primero
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const now = new Date()
       const deliveriesList: Delivery[] = snapshot.docs
         .map((doc) => ({
           id: doc.id,
           ...(doc.data() as Omit<Delivery, "id">),
         }))
-        .filter((d) => d.deliveryDate.toDate() >= now)
+        // ✅ ELIMINADO el filtro que solo mostraba futuras - ahora muestra TODAS
 
       setDeliveries(deliveriesList)
     })
@@ -147,7 +145,8 @@ export default function BeneficiaryDashboard() {
         return "#2196F3"
       case "En camino":
         return "#FF9800"
-      case "Completada":
+      case "Entregado":
+      case "entregada":
         return "#4CAF50"
       default:
         return "#718096"
@@ -175,13 +174,19 @@ export default function BeneficiaryDashboard() {
     )
   }
 
+  // ✅ NUEVO: Separar entregas futuras y pasadas
+  const now = new Date();
+  const upcomingDeliveries = deliveries.filter(d => d.deliveryDate.toDate() >= now);
+  const pastDeliveries = deliveries.filter(d => d.deliveryDate.toDate() < now);
+
   // Lógica para determinar qué mostrar
   const showFormOnly = userStatus === "Pendiente" && !hasCompletedForm;
+  const showAwaitingReview = userStatus === "Pendiente" && hasCompletedForm;
   const showContactMessage = userStatus === "Evaluación";
   const showDeliveries = userStatus === "Aprobado";
 
-  // Próxima entrega (solo si no está pendiente)
-  const nextDelivery = showDeliveries ? deliveries[0] : null;
+  // La próxima entrega sería la primera futura
+  const nextDelivery = upcomingDeliveries[0];
 
   return (
     <View style={styles.container}>
@@ -232,24 +237,41 @@ export default function BeneficiaryDashboard() {
           </View>
         )}
 
-        {/* CASO 2: Usuario pendiente con formulario completado */}
-        {showContactMessage && (
+        {/* CASO 2: Usuario pendiente CON formulario completado (AWAITING REVIEW) */}
+        {showAwaitingReview && (
           <View style={styles.contactMessageContainer}>
             <Ionicons name="time-outline" size={80} color="#FF9800" />
-            <Text style={styles.contactMessageTitle}>Formulario completado</Text>
+            <Text style={styles.contactMessageTitle}>Formulario completado, en revisión</Text>
             <Text style={styles.contactMessageSubtitle}>
               Hemos recibido su formulario. Nos pondremos en contacto con usted pronto para continuar con el proceso.
             </Text>
             <View style={styles.contactInfo}>
               <Ionicons name="information-circle" size={20} color="#2196F3" />
               <Text style={styles.contactInfoText}>
-                Estado: En revisión
+                Estado: En revisión (Pendiente de Evaluador)
               </Text>
             </View>
           </View>
         )}
 
-        {/* CASO 3: Usuario activo - Mostrar entregas normal */}
+        {/* CASO 3: Usuario en evaluación (Antiguo CASO 2) */}
+        {showContactMessage && (
+          <View style={styles.contactMessageContainer}>
+            <Ionicons name="time-outline" size={80} color="#FF9800" />
+            <Text style={styles.contactMessageTitle}>¡Felicidades, estás en evaluación!</Text>
+            <Text style={styles.contactMessageSubtitle}>
+              Pronto un administrador se pondrá en contacto para finalizar el proceso de ingreso al programa.
+            </Text>
+            <View style={styles.contactInfo}>
+              <Ionicons name="information-circle" size={20} color="#2196F3" />
+              <Text style={styles.contactInfoText}>
+                Estado: Contacto en curso
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* CASO 4: Usuario activo - Mostrar entregas normal */}
         {showDeliveries && (
           <>
             {/* Próxima entrega */}
@@ -278,23 +300,18 @@ export default function BeneficiaryDashboard() {
               </TouchableOpacity>
             )}
 
-            {/* Lista de otras entregas */}
+            {/* ✅ SECCIÓN: Otras entregas - SIEMPRE VISIBLE */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Otras entregas</Text>
-              {deliveries.length > 1 && (
+              {upcomingDeliveries.length > 1 && (
                 <View style={styles.countBadge}>
-                  <Text style={styles.countBadgeText}>{deliveries.length - 1}</Text>
+                  <Text style={styles.countBadgeText}>{upcomingDeliveries.length - 1}</Text>
                 </View>
               )}
             </View>
 
-            {deliveries.length <= 1 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="calendar-outline" size={64} color="#E2E8F0" />
-                <Text style={styles.emptyStateTitle}>No hay más entregas programadas</Text>
-              </View>
-            ) : (
-              deliveries.slice(1).map((delivery) => (
+            {upcomingDeliveries.length > 1 ? (
+              upcomingDeliveries.slice(1).map((delivery) => (
                 <View key={delivery.id} style={[styles.deliveryCard, { borderLeftColor: getStatusColor(delivery.status) }]}>
                   <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
                     <Text style={styles.statusText}>{delivery.status}</Text>
@@ -315,20 +332,71 @@ export default function BeneficiaryDashboard() {
                   )}
                 </View>
               ))
+            ) : (
+              <View style={styles.emptySection}>
+                <Ionicons name="calendar-outline" size={48} color="#E2E8F0" />
+                <Text style={styles.emptySectionText}>No hay otras entregas programadas</Text>
+              </View>
+            )}
+
+            {/* ✅ SECCIÓN: Historial de entregas (pasadas) */}
+            {pastDeliveries.length > 0 && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Historial de entregas</Text>
+                  <View style={styles.countBadge}>
+                    <Text style={styles.countBadgeText}>{pastDeliveries.length}</Text>
+                  </View>
+                </View>
+
+                {pastDeliveries.map((delivery) => (
+                  <View key={delivery.id} style={[styles.deliveryCard, styles.pastDeliveryCard, { borderLeftColor: getStatusColor(delivery.status) }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }]}>
+                      <Text style={styles.statusText}>{delivery.status}</Text>
+                    </View>
+                    <Text style={{ fontWeight: "600", fontSize: 16, marginBottom: 4 }}>
+                      {delivery.communityName}, {delivery.municipio}
+                    </Text>
+                    <Text>
+                      {formatDate(delivery.deliveryDate)} | {formatTime(delivery.deliveryDate)}
+                    </Text>
+                    <Text style={styles.pastDeliveryText}>Entregada</Text>
+                    {delivery.products && Object.keys(delivery.products).length > 0 && (
+                      <TouchableOpacity
+                        style={{ marginTop: 8 }}
+                        onPress={() => handleDeliveryDetails(delivery)}
+                      >
+                        <Text style={{ color: "#2196F3", fontWeight: "600" }}>Ver contenido entregado</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </>
+            )}
+
+            {/* Mensaje si no hay entregas en absoluto */}
+            {deliveries.length === 0 && (
+              <View style={styles.emptyState}>
+                <Ionicons name="calendar-outline" size={64} color="#E2E8F0" />
+                <Text style={styles.emptyStateTitle}>No hay entregas programadas</Text>
+              </View>
             )}
           </>
         )}
-
-        {/* Botón del formulario (siempre visible excepto cuando ya está pendiente con formulario) */}
-        
       </ScrollView>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7FAFC" },
-  headerBackground: { paddingTop: 40, paddingBottom: 20 },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#F7FAFC" 
+  },
+  headerBackground: { 
+    paddingTop: 40, 
+    paddingBottom: 20 
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -340,10 +408,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: 20,
   },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  title: { fontSize: 20, fontWeight: "bold", color: "#2D3748" },
-  avatarContainer: { padding: 5 },
-  loadingText: { fontSize: 18, color: "#4A5568", textAlign: "center", marginTop: 50 },
+  headerLeft: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 12 
+  },
+  title: { 
+    fontSize: 20, 
+    fontWeight: "bold", 
+    color: "#2D3748" 
+  },
+  avatarContainer: { 
+    padding: 5 
+  },
+  loadingText: { 
+    fontSize: 18, 
+    color: "#4A5568", 
+    textAlign: "center", 
+    marginTop: 50 
+  },
   welcomeCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -355,13 +438,38 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 12,
   },
-  welcomeTextContainer: { flex: 1 },
-  welcomeTitle: { fontSize: 16, color: "#2D3748", fontWeight: "600" },
-  welcomeSubtitle: { fontSize: 14, color: "#718096" },
-  statusText: { fontSize: 12, color: "#fff", marginTop: 2 },
-  content: { flex: 1, paddingHorizontal: 20 },
-  sectionHeader: { flexDirection: "row", alignItems: "center", marginTop: 24, marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#2D3748" },
+  welcomeTextContainer: { 
+    flex: 1 
+  },
+  welcomeTitle: { 
+    fontSize: 16, 
+    color: "#2D3748", 
+    fontWeight: "600" 
+  },
+  welcomeSubtitle: { 
+    fontSize: 14, 
+    color: "#718096" 
+  },
+  status: {
+    color: "#718096",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  content: { 
+    flex: 1, 
+    paddingHorizontal: 20 
+  },
+  sectionHeader: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginTop: 24, 
+    marginBottom: 16 
+  },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: "bold", 
+    color: "#2D3748" 
+  },
   countBadge: {
     backgroundColor: "#4CAF50",
     paddingHorizontal: 10,
@@ -369,9 +477,40 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginLeft: 10,
   },
-  countBadgeText: { fontSize: 12, fontWeight: "bold", color: "#fff" },
-  emptyState: { alignItems: "center", paddingVertical: 60, paddingHorizontal: 40 },
-  emptyStateTitle: { fontSize: 18, fontWeight: "600", color: "#4A5568", marginTop: 16, textAlign: "center" },
+  countBadgeText: { 
+    fontSize: 12, 
+    fontWeight: "bold", 
+    color: "#fff" 
+  },
+  emptyState: { 
+    alignItems: "center", 
+    paddingVertical: 60, 
+    paddingHorizontal: 40 
+  },
+  emptyStateTitle: { 
+    fontSize: 18, 
+    fontWeight: "600", 
+    color: "#4A5568", 
+    marginTop: 16, 
+    textAlign: "center" 
+  },
+  // ✅ NUEVO: Estilo para sección vacía
+  emptySection: {
+    alignItems: "center",
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    backgroundColor: "#F7FAFC",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderStyle: "dashed",
+  },
+  emptySectionText: {
+    fontSize: 14,
+    color: "#A0AEC0",
+    marginTop: 8,
+    textAlign: "center",
+  },
   deliveryCard: {
     backgroundColor: "#fff",
     borderRadius: 16,
@@ -385,11 +524,10 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: "#4CAF50",
   },
-  status: {
-    color: "#718096",
-    fontSize: 12,
-    marginTop: 2,
-
+  statusText: { 
+    fontSize: 12, 
+    color: "#fff", 
+    marginTop: 2 
   },
   statusBadge: {
     alignSelf: "flex-start",
@@ -497,5 +635,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+
+  // ✅ NUEVOS ESTILOS: Para entregas pasadas
+  pastDeliveryCard: {
+    opacity: 0.8,
+    backgroundColor: "#F7FAFC",
+  },
+  pastDeliveryText: {
+    fontSize: 12,
+    color: "#718096",
+    fontStyle: "italic",
+    marginTop: 4,
   },
 })

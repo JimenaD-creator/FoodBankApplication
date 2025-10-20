@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseconfig";
-import { collection, getDocs, addDoc, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, getDoc, query, limit, where } from "firebase/firestore";
 
 export default function DeliveryManagementScreen({ navigation }: any) {
   const [selectedCommunity, setSelectedCommunity] = useState<string>("");
@@ -72,80 +72,96 @@ export default function DeliveryManagementScreen({ navigation }: any) {
   };
 
   const handleSave = async () => {
-    if (!selectedCommunity) {
-      Alert.alert("Error", "Debes seleccionar una comunidad");
-      return;
-    }
+  if (!selectedCommunity) {
+    Alert.alert("Error", "Debes seleccionar una comunidad");
+    return;
+  }
 
-    const selectedVolunteers = volunteers.filter((v) => v.selected);
-    if (selectedVolunteers.length === 0) {
-      Alert.alert("Error", "Debes asignar al menos un voluntario");
-      return;
-    }
+  const selectedVolunteers = volunteers.filter((v) => v.selected);
+  if (selectedVolunteers.length === 0) {
+    Alert.alert("Error", "Debes asignar al menos un voluntario");
+    return;
+  }
+  
+  if (!standardTemplate || Object.keys(standardTemplate).length === 0) {
+    Alert.alert("Error", "No se ha cargado la plantilla estándar. Intenta de nuevo.");
+    console.log("standardTemplate es null o vacío:", standardTemplate);
+    return;
+  }
+
+  console.log("Guardando con productos:", standardTemplate);
+  console.log("Número de productos:", Object.keys(standardTemplate).length);
+
+  try {
+    const selectedCommunityData = communities.find(c => c.id === selectedCommunity);
     
-    if (!standardTemplate || Object.keys(standardTemplate).length === 0) {
-      Alert.alert("Error", "No se ha cargado la plantilla estándar. Intenta de nuevo.");
-      console.log("standardTemplate es null o vacío:", standardTemplate);
-      return;
-    }
-
-    console.log("Guardando con productos:", standardTemplate);
-    console.log("Número de productos:", Object.keys(standardTemplate).length);
-
-    try {
-      const selectedCommunityData = communities.find(c => c.id === selectedCommunity);
+    // Obtener QR existente de los beneficiarios o generar uno nuevo
+    const beneficiariesWithQR = await Promise.all(beneficiaries.map(async (b) => {
+      // Buscar si el beneficiario ya tiene un QR en entregas anteriores
+      const existingDeliveriesQuery = query(
+        collection(db, "scheduledDeliveries"),
+        where("beneficiary.id", "==", b.id),
+        limit(1)
+      );
+      const existingDeliveriesSnapshot = await getDocs(existingDeliveriesQuery);
       
-      const beneficiariesWithQR = beneficiaries.map((b) => ({
+      let existingQR = null;
+      if (!existingDeliveriesSnapshot.empty) {
+        existingQR = existingDeliveriesSnapshot.docs[0].data().beneficiary?.qrCode;
+      }
+      
+      return {
         id: b.id,
         name: b.nombre || b.fullName,
-        qrCode: generateUniqueId(),
+        qrCode: existingQR || generateUniqueId(), // Usar QR existente o generar uno nuevo
         redeemed: false,
-      }));
+      };
+    }));
 
-      const deliveryPromises = beneficiariesWithQR.map(async (beneficiary) => {
-        const deliveryRef = await addDoc(collection(db, "scheduledDeliveries"), {
-          communityId: selectedCommunity,
-          communityName: selectedCommunityData?.nombre || "",
-          municipio: selectedCommunityData?.municipio || "",
-          familias: selectedCommunityData?.familias || 0,
-          deliveryDate: date,
-          volunteers: selectedVolunteers.map((v) => ({
-            id: v.id,
-            name: v.fullName || v.name,
-          })),
-          beneficiary: {
-            id: beneficiary.id,
-            name: beneficiary.name,
-            qrCode: beneficiary.qrCode,
-            redeemed: beneficiary.redeemed,
-          },
-          products: standardTemplate,
-          status: "Programada",
-          createdAt: new Date(),
-          deliveryId: generateUniqueId(),
-        });
-        return deliveryRef.id;
+    const deliveryPromises = beneficiariesWithQR.map(async (beneficiary) => {
+      const deliveryRef = await addDoc(collection(db, "scheduledDeliveries"), {
+        communityId: selectedCommunity,
+        communityName: selectedCommunityData?.nombre || "",
+        municipio: selectedCommunityData?.municipio || "",
+        familias: selectedCommunityData?.familias || 0,
+        deliveryDate: date,
+        volunteers: selectedVolunteers.map((v) => ({
+          id: v.id,
+          name: v.fullName || v.name,
+        })),
+        beneficiary: {
+          id: beneficiary.id,
+          name: beneficiary.name,
+          qrCode: beneficiary.qrCode, // Mismo QR para todas las entregas del beneficiario
+          redeemed: beneficiary.redeemed,
+        },
+        products: standardTemplate,
+        status: "Programada",
+        createdAt: new Date(),
+        deliveryId: generateUniqueId(),
       });
+      return deliveryRef.id;
+    });
 
-      // Esperar a que todas las entregas se guarden
-      const deliveryIds = await Promise.all(deliveryPromises);
+    // Esperar a que todas las entregas se guarden
+    const deliveryIds = await Promise.all(deliveryPromises);
 
-      console.log("✅ Entregas guardadas con IDs:", deliveryIds);
-      console.log("👥 Entregas individuales creadas:", beneficiariesWithQR.length);
-      console.log("📦 Productos por entrega:", Object.keys(standardTemplate).length);
+    console.log("✅ Entregas guardadas con IDs:", deliveryIds);
+    console.log("👥 Entregas individuales creadas:", beneficiariesWithQR.length);
+    console.log("📦 Productos por entrega:", Object.keys(standardTemplate).length);
 
-      Alert.alert(
-        "Éxito", 
-        `Se programaron ${beneficiariesWithQR.length} entregas individuales correctamente`,
-        [
-          { text: "OK", onPress: () => navigation.goBack() }
-        ]
-      );
-    } catch (error) {
-      console.error("Error saving deliveries: ", error);
-      Alert.alert("Error", "No se pudieron guardar las entregas");
-    }
-  };
+    Alert.alert(
+      "Éxito", 
+      `Se programaron ${beneficiariesWithQR.length} entregas individuales correctamente`,
+      [
+        { text: "OK", onPress: () => navigation.goBack() }
+      ]
+    );
+  } catch (error) {
+    console.error("Error saving deliveries: ", error);
+    Alert.alert("Error", "No se pudieron guardar las entregas");
+  }
+};
 
   const selectedCommunityData = communities.find(c => c.id === selectedCommunity);
 

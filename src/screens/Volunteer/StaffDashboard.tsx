@@ -17,22 +17,24 @@ import { auth, db } from "../firebaseconfig"
 import { useNavigation } from "@react-navigation/native"
 import type { NavigationProp } from "../../../App"
 
-export interface AssignedDelivery { // <-- Added 'export' here
- id: string
- communityName: string
- municipio: string
- deliveryDate: any
- status: string
- familias: number
- beneficiary: {
-  name: string
- }
+export interface AssignedDelivery {
+  id: string
+  communityName: string
+  municipio: string
+  deliveryDate: any
+  status: string
+  familias: number
+  beneficiary: {
+    name: string
+  }
+  volunteers?: any[]
 }
 
 export default function StaffDashboard() {
   const navigation = useNavigation<NavigationProp>()
   const [assignedDeliveries, setAssignedDeliveries] = useState<AssignedDelivery[]>([])
   const [todayDeliveries, setTodayDeliveries] = useState<AssignedDelivery[]>([])
+  const [completedTodayDeliveries, setCompletedTodayDeliveries] = useState<AssignedDelivery[]>([])
   const [upcomingDeliveries, setUpcomingDeliveries] = useState<AssignedDelivery[]>([])
   const [stats, setStats] = useState({
     totalAssignments: 0,
@@ -42,7 +44,7 @@ export default function StaffDashboard() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [userName, setUserName] = useState("")
-  const [userStatus, setUserStatus] = useState("") // Nuevo estado para el status del usuario
+  const [userStatus, setUserStatus] = useState("")
 
   useEffect(() => {
     loadDashboardData()
@@ -59,7 +61,7 @@ export default function StaffDashboard() {
       if (!userSnapshot.empty) {
         const userData = userSnapshot.docs[0].data()
         setUserName(userData.fullName || "Voluntario")
-        setUserStatus(userData.status || "pendiente") // Guardar el estado del usuario
+        setUserStatus(userData.status || "pendiente")
       }
 
       // Si el usuario no está aprobado, no cargar más datos
@@ -72,7 +74,7 @@ export default function StaffDashboard() {
       const deliveriesSnapshot = await getDocs(collection(db, "scheduledDeliveries"))
 
       const assignedToMe = deliveriesSnapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }) as any)
+        .map((doc) => ({ id: doc.id, ...doc.data() }) as AssignedDelivery)
         .filter((delivery) => delivery.volunteers?.some((v: any) => v.id === user.uid))
 
       setAssignedDeliveries(assignedToMe)
@@ -83,30 +85,43 @@ export default function StaffDashboard() {
       const tomorrow = new Date(today)
       tomorrow.setDate(tomorrow.getDate() + 1)
 
+      // ✅ CORREGIDO: Filtrar entregas de hoy que NO estén entregadas
       const todayList = assignedToMe.filter((d) => {
-        const deliveryDate = d.deliveryDate.toDate()
-        return deliveryDate >= today && deliveryDate < tomorrow
+        const deliveryDate = d.deliveryDate?.toDate()
+        return deliveryDate && 
+               deliveryDate >= today && 
+               deliveryDate < tomorrow && 
+               d.status !== "Entregado" // ✅ Solo mostrar las que no están entregadas
       })
 
+      // ✅ NUEVO: Filtrar entregas de hoy que SÍ están entregadas
+      const completedTodayList = assignedToMe.filter((d) => {
+        const deliveryDate = d.deliveryDate?.toDate()
+        return deliveryDate && 
+               deliveryDate >= today && 
+               deliveryDate < tomorrow && 
+               d.status === "Entregado" // ✅ Solo las que SÍ están entregadas
+      })
+
+      // ✅ CORREGIDO: Para entregas próximas, también excluir las entregadas
       const upcomingList = assignedToMe
         .filter((d) => {
-          const deliveryDate = d.deliveryDate.toDate()
-          return deliveryDate >= tomorrow && d.status !== "Entregado"
+          const deliveryDate = d.deliveryDate?.toDate()
+          return deliveryDate && 
+                 deliveryDate >= tomorrow && 
+                 d.status !== "Entregado" // ✅ Solo mostrar las que no están entregadas
         })
-        .sort((a, b) => a.deliveryDate.toDate() - b.deliveryDate.toDate())
+        .sort((a, b) => (a.deliveryDate?.toDate() || 0) - (b.deliveryDate?.toDate() || 0))
 
       setTodayDeliveries(todayList)
+      setCompletedTodayDeliveries(completedTodayList)
       setUpcomingDeliveries(upcomingList)
 
-      // ✅ CORREGIDO: Contar solo beneficiarios de las comunidades asignadas al staff
+      // Contar beneficiarios
       const uniqueCommunityNames = Array.from(new Set(assignedToMe.map((d) => d.communityName)))
-
-      console.log("🏘️ Comunidades asignadas:", uniqueCommunityNames)
-
       let totalBeneficiaries = 0
 
       if (uniqueCommunityNames.length > 0) {
-        // Para cada comunidad, contar los beneficiarios
         for (const communityName of uniqueCommunityNames) {
           try {
             const beneficiariesSnapshot = await getDocs(
@@ -117,7 +132,6 @@ export default function StaffDashboard() {
               ),
             )
             totalBeneficiaries += beneficiariesSnapshot.size
-            console.log(`👥 Beneficiarios en ${communityName}:`, beneficiariesSnapshot.size)
           } catch (error) {
             console.error(`Error contando beneficiarios de ${communityName}:`, error)
           }
@@ -146,6 +160,7 @@ export default function StaffDashboard() {
   }
 
   const formatDate = (timestamp: any) => {
+    if (!timestamp?.toDate) return "Fecha no disponible"
     const date = timestamp.toDate()
     return date.toLocaleDateString("es-MX", {
       day: "numeric",
@@ -154,11 +169,19 @@ export default function StaffDashboard() {
   }
 
   const formatTime = (timestamp: any) => {
+    if (!timestamp?.toDate) return "Hora no disponible"
     const date = timestamp.toDate()
     return date.toLocaleTimeString("es-MX", {
       hour: "2-digit",
       minute: "2-digit",
     })
+  }
+
+  // Función para truncar nombres largos
+  const truncateName = (name: string, maxLength: number = 20) => {
+    if (!name) return "Sin nombre"
+    if (name.length <= maxLength) return name
+    return name.substring(0, maxLength - 3) + "..."
   }
 
   // Función para verificar si el usuario está pendiente de validación
@@ -331,7 +354,44 @@ export default function StaffDashboard() {
                 <Text style={styles.todayDeliveryLocation}>
                   {delivery.communityName}, {delivery.municipio}
                 </Text>
-                <Text style={styles.todayDeliveryFamilies}>{delivery.beneficiary.name}</Text>
+                <Text style={styles.todayDeliveryFamilies}>
+                  {truncateName(delivery.beneficiary?.name || "Beneficiario no asignado")}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* ✅ NUEVA SECCIÓN: Entregas de hoy completadas */}
+        {completedTodayDeliveries.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Text style={styles.sectionTitle}>Entregas de hoy completadas</Text>
+            </View>
+
+            {completedTodayDeliveries.map((delivery) => (
+              <TouchableOpacity
+                key={delivery.id}
+                style={[styles.todayDeliveryCard, styles.completedDeliveryCard]}
+                onPress={() => navigation.navigate("StaffDelivery", { delivery })}
+              >
+                <View style={styles.todayDeliveryHeader}>
+                  <View style={styles.todayDeliveryTime}>
+                    <Ionicons name="time" size={18} color="#10B981" />
+                    <Text style={[styles.todayDeliveryTimeText, styles.completedText]}>{formatTime(delivery.deliveryDate)}</Text>
+                  </View>
+                  <View style={[styles.completedBadge]}>
+                    <Ionicons name="checkmark" size={14} color="#fff" />
+                    <Text style={styles.completedBadgeText}>ENTREGADA</Text>
+                  </View>
+                </View>
+                <Text style={[styles.todayDeliveryLocation, styles.completedText]}>
+                  {delivery.communityName}, {delivery.municipio}
+                </Text>
+                <Text style={[styles.todayDeliveryFamilies, styles.completedText]}>
+                  {truncateName(delivery.beneficiary?.name || "Beneficiario no asignado")}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -365,8 +425,10 @@ export default function StaffDashboard() {
                   <View style={styles.deliveryMeta}>
                     <Ionicons name="time-outline" size={16} color="#718096" />
                     <Text style={styles.deliveryMetaText}>{formatTime(delivery.deliveryDate)}</Text>
-                    <Ionicons name="people-outline" size={16} color="#718096" style={{ marginLeft: 12 }} />
-                    <Text style={styles.todayDeliveryFamilies}>{delivery.beneficiary.name}</Text>
+                    <Ionicons name="person-outline" size={16} color="#718096" style={styles.deliveryMetaIcon} />
+                    <Text style={styles.deliveryBeneficiaryName} numberOfLines={1} ellipsizeMode="tail">
+                      {truncateName(delivery.beneficiary?.name || "Beneficiario no asignado")}
+                    </Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
@@ -377,36 +439,36 @@ export default function StaffDashboard() {
 
         {/* Quick actions */}
         <View style={styles.section}>
-  <Text style={styles.sectionTitle}>Herramientas</Text>
+          <Text style={styles.sectionTitle}>Herramientas</Text>
 
-  <TouchableOpacity
-    style={[styles.actionCard, { backgroundColor: '#E3F2FD' }]}
-    onPress={() => navigation.navigate("StaffBeneficiariesList")}
-  >
-    <View style={[styles.actionIcon, { backgroundColor: '#2196F3' }]}>
-      <Ionicons name="people" size={24} color="#fff" />
-    </View>
-    <View style={styles.actionContent}>
-      <Text style={styles.actionTitle}>Lista de beneficiarios</Text>
-      <Text style={[styles.actionSubtitle, { color: '#1565C0' }]}>Consultar información</Text>
-    </View>
-    <Ionicons name="chevron-forward" size={20} color="#2196F3" />
-  </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: '#E3F2FD' }]}
+            onPress={() => navigation.navigate("StaffBeneficiariesList")}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: '#2196F3' }]}>
+              <Ionicons name="people" size={24} color="#fff" />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Lista de beneficiarios</Text>
+              <Text style={[styles.actionSubtitle, { color: '#1565C0' }]}>Consultar información</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#2196F3" />
+          </TouchableOpacity>
 
-  <TouchableOpacity
-    style={[styles.actionCard, { backgroundColor: '#FFF3E0' }]}
-    onPress={() => navigation.navigate("DeliveryHistory")}
-  >
-    <View style={[styles.actionIcon, { backgroundColor: '#FF9800' }]}>
-      <Ionicons name="cube" size={24} color="#fff" />
-    </View>
-    <View style={styles.actionContent}>
-      <Text style={styles.actionTitle}>Historial de entregas</Text>
-      <Text style={[styles.actionSubtitle, { color: '#E65100' }]}>Ver entregas completadas</Text>
-    </View>
-    <Ionicons name="chevron-forward" size={20} color="#FF9800" />
-  </TouchableOpacity>
-</View>
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: '#FFF3E0' }]}
+            onPress={() => navigation.navigate("DeliveryHistory")}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: '#FF9800' }]}>
+              <Ionicons name="cube" size={24} color="#fff" />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Historial de entregas</Text>
+              <Text style={[styles.actionSubtitle, { color: '#E65100' }]}>Ver entregas completadas</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#FF9800" />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   )
@@ -609,6 +671,16 @@ const styles = StyleSheet.create({
   deliveryMetaText: {
     fontSize: 12,
     color: "#718096",
+    marginRight: 12,
+  },
+  deliveryMetaIcon: {
+    marginLeft: 12,
+  },
+  deliveryBeneficiaryName: {
+    fontSize: 12,
+    color: "#718096",
+    flex: 1,
+    marginLeft: 4,
   },
   emptyState: {
     alignItems: "center",
@@ -744,5 +816,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#3B82F6",
     fontWeight: "600",
+  },
+  // ✅ NUEVOS ESTILOS: Para entregas completadas
+  completedDeliveryCard: {
+    backgroundColor: "#F0FDF4",
+    borderLeftColor: "#10B981",
+    opacity: 0.8,
+  },
+  completedText: {
+    color: "#065F46",
+  },
+  completedBadge: {
+    backgroundColor: "#10B981",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  completedBadgeText: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#fff",
   },
 })

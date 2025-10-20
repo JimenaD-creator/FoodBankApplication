@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, ImageBackground } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { db, auth } from "../firebaseconfig";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -15,86 +15,98 @@ export default function BeneficiaryQR({ navigation }: any) {
   }, []);
 
   const fetchBeneficiaryQR = async () => {
-    try {
-      const currentUser = auth.currentUser;
+  try {
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+      setError("Usuario no autenticado");
+      setLoading(false);
+      return;
+    }
+
+    console.log("🔍 Buscando entregas para:", currentUser.uid);
+
+    // Buscar específicamente entregas del beneficiario actual
+    const deliveriesQuery = query(
+      collection(db, "scheduledDeliveries"),
+      where("beneficiary.id", "==", currentUser.uid)
+    );
+
+    const deliveriesSnapshot = await getDocs(deliveriesQuery);
+    
+    console.log("📊 Total de entregas encontradas para este beneficiario:", deliveriesSnapshot.size);
+
+    let upcomingDelivery = null;
+    const now = new Date();
+
+    // Buscar la entrega MÁS PRÓXIMA (no entregada y con fecha futura o de hoy)
+    deliveriesSnapshot.forEach((doc) => {
+      const delivery = doc.data();
+      const deliveryDate = delivery.deliveryDate.toDate();
       
-      if (!currentUser) {
-        setError("Usuario no autenticado");
-        setLoading(false);
-        return;
-      }
+      console.log(`📦 Entrega: ${delivery.communityName} - ${deliveryDate}`);
+      console.log(`   Estado: ${delivery.status}`);
+      console.log(`   QR: ${delivery.beneficiary?.qrCode}`);
 
-      console.log("🔍 Buscando entregas para:", currentUser.uid);
-
-      const deliveriesSnapshot = await getDocs(collection(db, "scheduledDeliveries"));
-      
-      console.log("📊 Total de entregas encontradas:", deliveriesSnapshot.size);
-
-      let beneficiaryData = null;
-      let deliveryData = null;
-
-      // Buscar en todas las entregas
-      deliveriesSnapshot.forEach((doc) => {
-        const delivery = doc.data();
-        console.log(`📦 Entrega: ${delivery.communityName} (${doc.id})`);
-        console.log(`   Beneficiario:`, delivery.beneficiary);
-        
-        // Verificar si esta entrega pertenece al usuario actual
-        if (delivery.beneficiary && delivery.beneficiary.id === currentUser.uid) {
-          console.log("✅ ENCONTRADO! Esta entrega pertenece al usuario");
-          beneficiaryData = delivery.beneficiary;
-          deliveryData = {
-            id: doc.id,
-            communityName: delivery.communityName,
-            municipio: delivery.municipio,
-            deliveryDate: delivery.deliveryDate,
-            status: delivery.status,
-            qrCode: delivery.beneficiary.qrCode
+      // Solo considerar entregas no entregadas y con fecha futura/hoy
+      if (delivery.status !== "entregada" && deliveryDate >= now) {
+        if (!upcomingDelivery || deliveryDate < upcomingDelivery.deliveryDate.toDate()) {
+          console.log("✅ ENCONTRADA ENTREGA PRÓXIMA");
+          upcomingDelivery = {
+            ...delivery,
+            id: doc.id
           };
         }
-      });
+      }
+    });
 
-      if (beneficiaryData && deliveryData) {
-        // Usar el QR code específico del beneficiario o el ID de la entrega
-        const qrValue = deliveryData.qrCode || deliveryData.id;
-        
-        setQrData({
-          deliveryId: qrValue,
-          beneficiaryName: beneficiaryData.name,
-          communityName: deliveryData.communityName,
-          municipio: deliveryData.municipio,
-          deliveryDate: deliveryData.deliveryDate,
-          status: deliveryData.status
-        });
-        
-        console.log("🎉 QR cargado correctamente para:", beneficiaryData.name);
-        console.log("📱 Valor del QR:", qrValue);
-      } else {
-        console.log("❌ Usuario no encontrado en ninguna entrega");
-        console.log("ID buscado:", currentUser.uid);
-        
-        // Debug: mostrar todas las entregas para verificar la estructura
-        deliveriesSnapshot.forEach((doc) => {
-          const delivery = doc.data();
-          console.log(`Entrega ${doc.id}:`, {
-            beneficiaryId: delivery.beneficiary?.id,
-            beneficiaryName: delivery.beneficiary?.name,
-            community: delivery.communityName
-          });
-        });
-        
-        setError(`No tienes entregas programadas en este momento.
+    // Si no hay entregas próximas, usar la más reciente no entregada
+    if (!upcomingDelivery) {
+      console.log("⚠️  No hay entregas próximas, buscando la más reciente no entregada");
+      deliveriesSnapshot.forEach((doc) => {
+        const delivery = doc.data();
+        if (delivery.status !== "entregada") {
+          if (!upcomingDelivery || delivery.deliveryDate.toDate() > upcomingDelivery.deliveryDate.toDate()) {
+            upcomingDelivery = {
+              ...delivery,
+              id: doc.id
+            };
+          }
+        }
+      });
+    }
+
+    if (upcomingDelivery) {
+      const qrValue = upcomingDelivery.beneficiary?.qrCode || upcomingDelivery.deliveryId || upcomingDelivery.id;
+      
+      console.log("🎯 ENTREGA SELECCIONADA:", upcomingDelivery.communityName);
+      console.log("📅 FECHA:", upcomingDelivery.deliveryDate);
+      console.log("🎯 VALOR FINAL DEL QR:", qrValue);
+
+      setQrData({
+        deliveryId: qrValue,
+        beneficiaryName: upcomingDelivery.beneficiary?.name,
+        communityName: upcomingDelivery.communityName,
+        municipio: upcomingDelivery.municipio,
+        deliveryDate: upcomingDelivery.deliveryDate,
+        status: upcomingDelivery.status
+      });
+      
+      console.log("🎉 QR cargado correctamente");
+    } else {
+      console.log("❌ No se encontraron entregas próximas para el usuario");
+      setError(`No tienes entregas programadas en este momento.
 
 Si acabas de ser agregado a una entrega, espera unos minutos o contacta al administrador.`);
-      }
-
-    } catch (error) {
-      console.error("Error fetching QR:", error);
-      setError("Error al cargar el código QR. Intenta más tarde.");
-    } finally {
-      setLoading(false);
     }
-  };
+
+  } catch (error) {
+    console.error("Error fetching QR:", error);
+    setError("Error al cargar el código QR. Intenta más tarde.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleRetry = () => {
     setLoading(true);
@@ -103,6 +115,22 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
     setTimeout(() => {
       fetchBeneficiaryQR();
     }, 1000);
+  };
+
+  // Función para determinar el tipo de código mostrado
+  const getCodeType = () => {
+    if (!qrData) return "";
+    
+    switch (qrData.qrSource) {
+      case "beneficiary":
+        return "Código QR personal";
+      case "delivery":
+        return "ID de entrega";
+      case "document":
+        return "ID del documento";
+      default:
+        return "Código de verificación";
+    }
   };
 
   if (loading) {
@@ -229,9 +257,9 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
             />
           </View>
           
-          {/* ID de la entrega para referencia 
+          {/* Información del código 
           <View style={styles.codeContainer}>
-            <Text style={styles.codeLabel}>ID de entrega:</Text>
+            <Text style={styles.codeType}>{getCodeType()}</Text>
             <Text style={styles.codeValue}>{qrData.deliveryId}</Text>
           </View>*/}
         </View>
@@ -388,17 +416,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 0,
   },
-  codeLabel: {
+  codeType: {
     fontSize: 12,
     color: "#718096",
-    marginBottom: 4
+    marginBottom: 4,
+    fontWeight: "500",
   },
   codeValue: {
     fontSize: 14,
     fontWeight: "600",
     color: "#4CAF50",
     fontFamily: "monospace",
-
   },
   instructionsCard: {
     backgroundColor: "#fff",

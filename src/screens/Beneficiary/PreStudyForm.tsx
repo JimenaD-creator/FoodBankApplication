@@ -151,7 +151,7 @@ export default function PreStudyForm({ navigation }: any) {
       
       Alert.alert(
         "Formulario enviado",
-        "Tu solicitud ha sido enviada. Recibirás una notificación cuando sea revisada.",
+        "Tu solicitud ha sido enviada. Recarga el dashboard para actualizar el estado de validación.",
         [{ text: "OK", onPress: () => navigation.goBack() }]
       );
     } catch (error) {

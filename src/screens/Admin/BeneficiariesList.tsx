@@ -10,12 +10,17 @@ export default function BeneficiariesList({ navigation }: any) {
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Filtrar usuarios donde role === "beneficiary" 
-        const q = query(collection(db, "users"), where("role", "==", "beneficiary"));
+        // Filtrar usuarios donde role === "beneficiary" Y acceptedPrivacyPolicy === true
+        const q = query(
+         collection(db, "users"), 
+        where("role", "==", "beneficiary"),
+        where("acceptedPrivacyPolicy", "==", true),
+        where("status", "in", ["Aprobado", "Evaluación"])
+        );
         const snapshot = await getDocs(q);
 
         const data = snapshot.docs.map((doc) => ({
@@ -23,6 +28,7 @@ export default function BeneficiariesList({ navigation }: any) {
           ...doc.data(),
         }));
 
+        console.log(`✅ Beneficiarios con política aceptada: ${data.length}`);
         setBeneficiaries(data);
         setFilteredBeneficiaries(data);
       } catch (error) {

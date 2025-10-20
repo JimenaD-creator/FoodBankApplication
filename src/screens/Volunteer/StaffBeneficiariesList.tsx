@@ -15,13 +15,18 @@ export default function StaffBeneficiariesList({ navigation }: any) {
       try {
         setLoading(true);
         // Filtrar usuarios donde role === "beneficiary" 
-        const q = query(collection(db, "users"), where("role", "==", "beneficiary"));
-        const snapshot = await getDocs(q);
-
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+         const q = query(
+                 collection(db, "users"), 
+                where("role", "==", "beneficiary"),
+                where("acceptedPrivacyPolicy", "==", true),
+                where("status", "in", ["Aprobado", "Evaluación"])
+                );
+                const snapshot = await getDocs(q);
+        
+                const data = snapshot.docs.map((doc) => ({
+                  id: doc.id,
+                  ...doc.data(),
+                }));
 
         setBeneficiaries(data);
         setFilteredBeneficiaries(data);
@@ -90,19 +95,23 @@ export default function StaffBeneficiariesList({ navigation }: any) {
     return (
       <TouchableOpacity style={styles.item} activeOpacity={0.7}>
         <View style={styles.itemHeader}>
-          <View style={styles.nameContainer}>
-            <Ionicons name="person" size={20} color="#4CAF50" />
-            <Text style={styles.name}>{item.fullName || "Nombre no definido"}</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-            <Ionicons 
-              name={getStatusIcon(item.status)} 
-              size={12} 
-              color="#fff" 
-            />
-            <Text style={styles.statusText}>{item.status || "Sin definir"}</Text>
-          </View>
-        </View>
+              <View style={styles.nameContainer}>
+                <Ionicons name="person" size={20} color="#4CAF50" />
+                <View style={styles.nameWrapper}>
+                  <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
+                    {item.fullName || "Nombre no definido"}
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                <Ionicons 
+                  name={getStatusIcon(item.status)} 
+                  size={12} 
+                  color="#fff" 
+                />
+                <Text style={styles.statusText}>{item.status || "Sin definir"}</Text>
+              </View>
+            </View>
         
         <View style={styles.infoContainer}>
           <View style={styles.infoRow}>
@@ -384,6 +393,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+   nameWrapper: {
+    flex: 1,
+    marginLeft: 8,
   },
   statusText: {
     fontSize: 11,

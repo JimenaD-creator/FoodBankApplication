@@ -1,21 +1,9 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
-  ImageBackground, 
-  Alert, 
-  TextInput,
-  Dimensions 
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Alert, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseconfig";
 import { useRoute, RouteProp  } from '@react-navigation/native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const FOOD_FREQUENCY = ["Siempre", "A veces", "Rara vez", "Nunca"];
 const INCOME_RANGES = ["Menos de $3,000", "$3,000 - $6,000", "$6,000 - $10,000", "Más de $10,000"];
@@ -35,7 +23,7 @@ type RootStackParamList = {
   SocioNutritionalFormScreen: { origin: string }
 };
 
-type SocioNutritionalFormScreenRouteProp = RouteProp<RootStackParamList, 'SocioNutritionalFormScreen'>;
+type SocioNutritionalFormScreenRouteProp = RouteProp< RootStackParamList, 'SocioNutritionalFormScreen' >;
 
 export default function SocioNutritionalFormScreen({ navigation }: any) {
   const route = useRoute<SocioNutritionalFormScreenRouteProp>();
@@ -66,7 +54,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     gastosAlimentos: 0,
   });
 
-  const [validation, setValidation] = useState<boolean | null>(null);
+  const [validation, setValidation] = useState(Boolean);
 
   const handleNumberChange = (field: string, increment: boolean) => {
     setFormData(prev => ({
@@ -106,34 +94,30 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
         status: "Evaluación"
       });
 
+      // Navigate to Step 4 instead of going back
       setStep(4);
       
       Alert.alert(
-        "✅ Formulario Enviado",
-        "Tu información ha sido guardada exitosamente. Ahora puedes proceder con la validación.",
-        [{ text: "Continuar", style: "default" }]
+        "Formulario enviado",
+        "Tu información ha sido guardada. Ahora puedes proceder con la validación.",
+        [{ text: "OK" }]
       );
 
     } catch (error) {
       console.error("Error guardando formulario:", error);
-      Alert.alert("❌ Error", "No se pudo enviar el formulario. Intenta nuevamente.");
+      Alert.alert("Error", "No se pudo enviar el formulario");
     }
   };
 
   const handleValidation = async () => {
-    if (validation === null) {
-      Alert.alert("Selección requerida", "Por favor selecciona Sí o No para continuar.");
-      return;
-    }
-
     try {
-      const deliveryRef = doc(db, "users", origin);
-      await updateDoc(deliveryRef, { status: "Aprobado" });
-      Alert.alert('✅ Éxito', 'El estado del beneficiario ha sido actualizado correctamente.');
-      navigation.goBack();
-    } catch (error) {
-      Alert.alert("❌ Error", "No se pudo actualizar el estado en la base de datos.");
-    }
+        const deliveryRef = doc(db, "users", origin);
+        await updateDoc(deliveryRef, { status: "Aprobado" });
+        Alert.alert('✅', 'El Status del Beneficiario se ha Actualizado');
+        navigation.goBack();
+      } catch (error) {
+        Alert.alert("❌ Error", "No se pudo actualizar el estado en FireBase.");
+      }
   };
 
   const canContinue = () => {
@@ -142,121 +126,112 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     return true;
   };
 
-  const StepIndicator = () => (
-    <View style={styles.stepIndicatorContainer}>
-      {[1, 2, 3, 4].map((stepNumber) => (
-        <View key={stepNumber} style={styles.stepRow}>
-          <View style={[
-            styles.stepCircle,
-            step === stepNumber && styles.stepCircleActive,
-            step > stepNumber && styles.stepCircleCompleted
-          ]}>
-            {step > stepNumber ? (
-              <Ionicons name="checkmark" size={16} color="#fff" />
-            ) : (
-              <Text style={[
-                styles.stepNumber,
-                (step === stepNumber || step > stepNumber) && styles.stepNumberActive
-              ]}>
-                {stepNumber}
-              </Text>
-            )}
-          </View>
-          {stepNumber < 4 && (
-            <View style={[
-              styles.stepLine,
-              step > stepNumber && styles.stepLineCompleted
-            ]} />
-          )}
-        </View>
-      ))}
-    </View>
-  );
-
   // ---------------- STEP 1 ----------------
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
-      <View style={styles.stepHeader}>
-        <Ionicons name="people" size={32} color="#4CAF50" />
-        <View style={styles.stepTextContainer}>
-          <Text style={styles.stepTitle}>Información del Hogar</Text>
-          <Text style={styles.stepSubtitle}>Cuéntanos sobre las personas que viven contigo</Text>
+      <Text style={styles.stepTitle}>Información del hogar</Text>
+      <Text style={styles.stepSubtitle}>Cuéntanos sobre las personas que viven contigo</Text>
+
+      {/* Total personas */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>¿Cuántas personas viven en tu hogar?</Text>
+        <View style={styles.counterContainer}>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('totalPersonas', false)}>
+            <Ionicons name="remove" size={24} color="#E53E3E" />
+          </TouchableOpacity>
+          <Text style={styles.counterValue}>{formData.totalPersonas}</Text>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('totalPersonas', true)}>
+            <Ionicons name="add" size={24} color="#4CAF50" />
+          </TouchableOpacity>
         </View>
       </View>
 
-      {[
-        { label: "¿Cuántas personas viven en tu hogar?", field: 'totalPersonas' },
-        { label: "¿Cuántos son menores de edad?", field: 'menoresEdad' },
-        { label: "¿Cuántos adultos trabajan actualmente?", field: 'adultosTrabajar' },
-        { label: "¿Cuántos adultos mayores (mayores de 60 años)?", field: 'adultosMayores' },
-        { label: "¿Cuántos niños menores de 5 años?", field: 'niñosMenores5' },
-      ].map((item, index) => (
-        <View key={index} style={styles.questionBlock}>
-          <Text style={styles.questionLabel}>{item.label}</Text>
-          <View style={styles.counterContainer}>
-            <TouchableOpacity 
-              style={styles.counterButton} 
-              onPress={() => handleNumberChange(item.field, false)}
-            >
-              <Ionicons name="remove" size={20} color="#E53E3E" />
-            </TouchableOpacity>
-            <View style={styles.counterValueContainer}>
-              <Text style={styles.counterValue}>{formData[item.field as keyof typeof formData] as number}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.counterButton} 
-              onPress={() => handleNumberChange(item.field, true)}
-            >
-              <Ionicons name="add" size={20} color="#4CAF50" />
-            </TouchableOpacity>
-          </View>
+      {/* Menores de edad */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>¿Cuántos son menores de edad?</Text>
+        <View style={styles.counterContainer}>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('menoresEdad', false)}>
+            <Ionicons name="remove" size={24} color="#E53E3E" />
+          </TouchableOpacity>
+          <Text style={styles.counterValue}>{formData.menoresEdad}</Text>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('menoresEdad', true)}>
+            <Ionicons name="add" size={24} color="#4CAF50" />
+          </TouchableOpacity>
         </View>
-      ))}
+      </View>
 
+      {/* Adultos que trabajan */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>¿Cuántos adultos trabajan actualmente?</Text>
+        <View style={styles.counterContainer}>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('adultosTrabajar', false)}>
+            <Ionicons name="remove" size={24} color="#E53E3E" />
+          </TouchableOpacity>
+          <Text style={styles.counterValue}>{formData.adultosTrabajar}</Text>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('adultosTrabajar', true)}>
+            <Ionicons name="add" size={24} color="#4CAF50" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Adultos mayores */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>¿Cuántos adultos mayores (mayores de 60 años)?</Text>
+        <View style={styles.counterContainer}>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('adultosMayores', false)}>
+            <Ionicons name="remove" size={24} color="#E53E3E" />
+          </TouchableOpacity>
+          <Text style={styles.counterValue}>{formData.adultosMayores}</Text>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('adultosMayores', true)}>
+            <Ionicons name="add" size={24} color="#4CAF50" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Niños menores 5 */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>¿Cuántos niños menores de 5 años?</Text>
+        <View style={styles.counterContainer}>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('niñosMenores5', false)}>
+            <Ionicons name="remove" size={24} color="#E53E3E" />
+          </TouchableOpacity>
+          <Text style={styles.counterValue}>{formData.niñosMenores5}</Text>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('niñosMenores5', true)}>
+            <Ionicons name="add" size={24} color="#4CAF50" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Personas con discapacidad */}
       <View style={styles.questionBlock}>
         <Text style={styles.questionLabel}>¿Alguna persona en el hogar tiene discapacidad?</Text>
         <View style={styles.yesNoContainer}>
-          {[
-            { label: "Sí", value: true },
-            { label: "No", value: false }
-          ].map((option) => (
-            <TouchableOpacity
-              key={option.label}
-              style={[
-                styles.yesNoButton,
-                formData.personasDiscapacidad === option.value && styles.yesNoButtonSelected
-              ]}
-              onPress={() => setFormData({ ...formData, personasDiscapacidad: option.value })}
-            >
-              <Text style={[
-                styles.yesNoText,
-                formData.personasDiscapacidad === option.value && styles.yesNoTextSelected
-              ]}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity
+            style={[styles.yesNoButton, formData.personasDiscapacidad === true && styles.yesNoButtonSelected]}
+            onPress={() => setFormData({ ...formData, personasDiscapacidad: true })}
+          >
+            <Text style={[styles.yesNoText, formData.personasDiscapacidad === true && styles.yesNoTextSelected]}>Sí</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.yesNoButton, formData.personasDiscapacidad === false && styles.yesNoButtonSelected]}
+            onPress={() => setFormData({ ...formData, personasDiscapacidad: false })}
+          >
+            <Text style={[styles.yesNoText, formData.personasDiscapacidad === false && styles.yesNoTextSelected]}>No</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
+      {/* Espacio cocina */}
       <View style={styles.questionBlock}>
         <Text style={styles.questionLabel}>Espacio disponible para cocinar/almacenar alimentos</Text>
         <View style={styles.optionsGrid}>
           {["Pequeño", "Mediano", "Grande"].map(option => (
             <TouchableOpacity
               key={option}
-              style={[
-                styles.optionButton,
-                formData.espacioCocina === option && styles.optionButtonSelected
-              ]}
+              style={[styles.optionButton, formData.espacioCocina === option && styles.optionButtonSelected]}
               onPress={() => setFormData({ ...formData, espacioCocina: option })}
             >
-              <Text style={[
-                styles.optionText,
-                formData.espacioCocina === option && styles.optionTextSelected
-              ]}>
-                {option}
-              </Text>
+              <Text style={[styles.optionText, formData.espacioCocina === option && styles.optionTextSelected]}>{option}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -267,65 +242,68 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
   // ---------------- STEP 2 ----------------
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
-      <View style={styles.stepHeader}>
-        <Ionicons name="restaurant" size={32} color="#FF9800" />
-        <View style={styles.stepTextContainer}>
-          <Text style={styles.stepTitle}>Situación Alimentaria</Text>
-          <Text style={styles.stepSubtitle}>Hábitos y frecuencia de consumo de alimentos</Text>
-        </View>
-      </View>
+      <Text style={styles.stepTitle}>Situación alimentaria</Text>
+      <Text style={styles.stepSubtitle}>Hábitos y frecuencia de consumo de alimentos</Text>
 
+      {/* Tipos de alimentos */}
       <View style={styles.questionBlock}>
         <Text style={styles.questionLabel}>¿Con qué frecuencia consumes los siguientes alimentos?</Text>
         {FOOD_TYPES.map(food => (
-          <View key={food} style={styles.foodTypeSection}>
-            <Text style={styles.foodTypeLabel}>{food}</Text>
-            <View style={styles.frequencyGrid}>
-              {FOOD_FREQUENCY.map(option => (
-                <TouchableOpacity
-                  key={option}
-                  style={[
-                    styles.frequencyButton,
-                    formData.tiposAlimentos.includes(`${food}-${option}`) && styles.frequencyButtonSelected
-                  ]}
-                  onPress={() => toggleArrayItem('tiposAlimentos', `${food}-${option}`)}
-                >
-                  <Text style={[
-                    styles.frequencyText,
-                    formData.tiposAlimentos.includes(`${food}-${option}`) && styles.frequencyTextSelected
-                  ]}>
-                    {option}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <View key={food} style={styles.optionsGrid}>
+            {FOOD_FREQUENCY.map(option => (
+              <TouchableOpacity
+                key={option}
+                style={[styles.optionButton, formData.tiposAlimentos.includes(`${food}-${option}`) && styles.optionButtonSelected]}
+                onPress={() => toggleArrayItem('tiposAlimentos', `${food}-${option}`)}
+              >
+                <Text style={[styles.optionText, formData.tiposAlimentos.includes(`${food}-${option}`) && styles.optionTextSelected]}>
+                  {food} - {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         ))}
       </View>
 
+      {/* Hábitos dietéticos */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>¿Consumes regularmente estos alimentos?</Text>
+        {DIETARY_HABITS.map(item => {
+          const key = item.toLowerCase() as keyof typeof formData;
+          return (
+            <View key={item} style={styles.optionsGrid}>
+              {FOOD_FREQUENCY.map(option => (
+                <TouchableOpacity
+                  key={option}
+                  style={[styles.optionButton, formData[key] === option && styles.optionButtonSelected]}
+                  onPress={() => setFormData({ ...formData, [key]: option })}
+                >
+                  <Text style={[styles.optionText, formData[key] === option && styles.optionTextSelected]}>
+                    {item} - {option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Dormir con hambre */}
       <View style={styles.questionBlock}>
         <Text style={styles.questionLabel}>¿Alguna vez has dormido con hambre por falta de alimentos?</Text>
         <View style={styles.yesNoContainer}>
-          {[
-            { label: "Sí", value: true },
-            { label: "No", value: false }
-          ].map((option) => (
-            <TouchableOpacity
-              key={option.label}
-              style={[
-                styles.yesNoButton,
-                formData.dormirConHambre === option.value && styles.yesNoButtonSelected
-              ]}
-              onPress={() => setFormData({ ...formData, dormirConHambre: option.value })}
-            >
-              <Text style={[
-                styles.yesNoText,
-                formData.dormirConHambre === option.value && styles.yesNoTextSelected
-              ]}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity
+            style={[styles.yesNoButton, formData.dormirConHambre === true && styles.yesNoButtonSelected]}
+            onPress={() => setFormData({ ...formData, dormirConHambre: true })}
+          >
+            <Text style={[styles.yesNoText, formData.dormirConHambre === true && styles.yesNoTextSelected]}>Sí</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.yesNoButton, formData.dormirConHambre === false && styles.yesNoButtonSelected]}
+            onPress={() => setFormData({ ...formData, dormirConHambre: false })}
+          >
+            <Text style={[styles.yesNoText, formData.dormirConHambre === false && styles.yesNoTextSelected]}>No</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -334,30 +312,20 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
   // ---------------- STEP 3 ----------------
   const renderStep3 = () => (
     <View style={styles.stepContainer}>
-      <View style={styles.stepHeader}>
-        <Ionicons name="medkit" size={32} color="#2196F3" />
-        <View style={styles.stepTextContainer}>
-          <Text style={styles.stepTitle}>Salud y Economía</Text>
-          <Text style={styles.stepSubtitle}>Condiciones de salud y recursos del hogar</Text>
-        </View>
-      </View>
+      <Text style={styles.stepTitle}>Salud y situación económica</Text>
+      <Text style={styles.stepSubtitle}>Condiciones de salud y recursos del hogar</Text>
 
+      {/* Condiciones de salud */}
       <View style={styles.questionBlock}>
         <Text style={styles.questionLabel}>¿Presenta alguna de las siguientes condiciones de salud?</Text>
-        <View style={styles.healthGrid}>
+        <View style={styles.optionsGrid}>
           {HEALTH_CONDITIONS.map(cond => (
             <TouchableOpacity
               key={cond}
-              style={[
-                styles.healthButton,
-                formData.condicionesSalud.includes(cond) && styles.healthButtonSelected
-              ]}
+              style={[styles.optionButton, formData.condicionesSalud.includes(cond) && styles.optionButtonSelected]}
               onPress={() => toggleArrayItem('condicionesSalud', cond)}
             >
-              <Text style={[
-                styles.healthText,
-                formData.condicionesSalud.includes(cond) && styles.healthTextSelected
-              ]}>
+              <Text style={[styles.optionText, formData.condicionesSalud.includes(cond) && styles.optionTextSelected]}>
                 {cond}
               </Text>
             </TouchableOpacity>
@@ -365,81 +333,115 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
         </View>
       </View>
 
+      {/* Dieta especial */}
       <View style={styles.questionBlock}>
         <Text style={styles.questionLabel}>Dieta especial o restricciones alimentarias</Text>
         <TextInput
           style={styles.textInput}
-          placeholder="Describe aquí cualquier dieta especial o restricción alimentaria..."
-          placeholderTextColor="#9CA3AF"
+          placeholder="Describe aquí..."
           multiline
-          numberOfLines={3}
           value={formData.dietaEspecial}
           onChangeText={text => setFormData({ ...formData, dietaEspecial: text })}
         />
       </View>
 
+      {/* Hospitalizaciones */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>Hospitalizaciones por temas de nutrición</Text>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Describe aquí..."
+          multiline
+          value={formData.hospitalizacionesNutricion}
+          onChangeText={text => setFormData({ ...formData, hospitalizacionesNutricion: text })}
+        />
+      </View>
+
+      {/* Ingreso mensual */}
       <View style={styles.questionBlock}>
         <Text style={styles.questionLabel}>Ingreso mensual del hogar</Text>
-        <View style={styles.incomeGrid}>
+        <View style={styles.optionsGrid}>
           {INCOME_RANGES.map(range => (
             <TouchableOpacity
               key={range}
-              style={[
-                styles.incomeButton,
-                formData.ingresoMensual === range && styles.incomeButtonSelected
-              ]}
+              style={[styles.optionButton, formData.ingresoMensual === range && styles.optionButtonSelected]}
               onPress={() => setFormData({ ...formData, ingresoMensual: range })}
             >
-              <Text style={[
-                styles.incomeText,
-                formData.ingresoMensual === range && styles.incomeTextSelected
-              ]}>
-                {range}
+              <Text style={[styles.optionText, formData.ingresoMensual === range && styles.optionTextSelected]}>{range}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Servicios básicos */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>Servicios básicos disponibles</Text>
+        <View style={styles.optionsGrid}>
+          {SERVICES.map(service => (
+            <TouchableOpacity
+              key={service}
+              style={[styles.optionButton, formData.serviciosBasicos.includes(service) && styles.optionButtonSelected]}
+              onPress={() => toggleArrayItem('serviciosBasicos', service)}
+            >
+              <Text style={[styles.optionText, formData.serviciosBasicos.includes(service) && styles.optionTextSelected]}>
+                {service}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
-    </View>
-  );
 
-  // ---------------- STEP 4 ----------------
-  const renderStep4 = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.stepHeader}>
-        <Ionicons name="checkmark-circle" size={32} color="#10B981" />
-        <View style={styles.stepTextContainer}>
-          <Text style={styles.stepTitle}>Validación Final</Text>
-          <Text style={styles.stepSubtitle}>Confirmación del beneficiario</Text>
+      {/* Fuentes de ingreso */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>Número de fuentes de ingreso en el hogar</Text>
+        <View style={styles.counterContainer}>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('fuentesIngreso', false)}>
+            <Ionicons name="remove" size={24} color="#E53E3E" />
+          </TouchableOpacity>
+          <Text style={styles.counterValue}>{formData.fuentesIngreso}</Text>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('fuentesIngreso', true)}>
+            <Ionicons name="add" size={24} color="#4CAF50" />
+          </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.validationContainer}>
-        <View style={styles.validationCard}>
-          <Ionicons name="shield-checkmark" size={48} color="#10B981" />
-          <Text style={styles.validationTitle}>¿Validar Beneficiario?</Text>
-          <Text style={styles.validationSubtitle}>
-            Basado en la información proporcionada, ¿desea aprobar a este usuario como beneficiario?
-          </Text>
-          
-          <View style={styles.validationButtonsContainer}>
-            {[
-              { label: "Sí, Aprobar", value: true, color: "#10B981" },
-              { label: "No, Rechazar", value: false, color: "#EF4444" }
-            ].map((option) => (
-              <TouchableOpacity
-                key={option.label}
-                style={[
-                  styles.validationButton,
-                  { backgroundColor: option.color },
-                  validation === option.value && styles.validationButtonSelected
-                ]}
-                onPress={() => setValidation(option.value)}
-              >
-                <Text style={styles.validationButtonText}>{option.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+      {/* Gastos en alimentos */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>Gastos aproximados en alimentos por mes</Text>
+        <View style={styles.counterContainer}>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('gastosAlimentos', false)}>
+            <Ionicons name="remove" size={24} color="#E53E3E" />
+          </TouchableOpacity>
+          <Text style={styles.counterValue}>{formData.gastosAlimentos}</Text>
+          <TouchableOpacity style={styles.counterButton} onPress={() => handleNumberChange('gastosAlimentos', true)}>
+            <Ionicons name="add" size={24} color="#4CAF50" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderStep4 = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>Validación de Beneficiario</Text>
+      <Text style={styles.stepSubtitle}></Text>
+
+      {/* Validacion de Usuario */}
+      <View style={styles.questionBlock}>
+        <Text style={styles.questionLabel}>Apartir de estos Datos, desea validar al Usuario:</Text>
+        <View style={styles.yesNoContainer}>
+          <TouchableOpacity
+            style={[styles.yesNoButton, validation === true && styles.yesNoButtonSelected]}
+            onPress={() => setValidation(true)}
+          >
+            <Text style={[styles.yesNoText, validation === true && styles.yesNoTextSelected]}>Sí</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.yesNoButton, validation === false && styles.yesNoButtonSelected]}
+            onPress={() => setValidation(false)}
+          >
+            <Text style={[styles.yesNoText, validation === false && styles.yesNoTextSelected]}>No</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -447,57 +449,46 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <ImageBackground 
-        source={require('../../../assets/background.jpg')}
-        style={styles.headerBackground}
-        resizeMode="cover"
-      >
-        <View style={styles.headerOverlay}>
-          <View style={styles.header}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerTitle}>Formulario Socio-Nutricional</Text>
-              <Text style={styles.headerSubtitle}>Paso {step} de 4</Text>
-            </View>
-            <View style={styles.headerPlaceholder} />
-          </View>
-        </View>
-      </ImageBackground>
 
-      {/* Step Indicator */}
-      <View style={styles.stepIndicatorWrapper}>
-        <StepIndicator />
+      {/* Header */}
+            <ImageBackground 
+              source={require('../../../assets/background.jpg')}
+              style={styles.headerBackground}
+              resizeMode="cover"
+            >
+            <View style={styles.header}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+              <Ionicons name="arrow-back" size={24} color="#E53E3E" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Formulario Socio-Nutricional</Text>
+         </View>
+      </ImageBackground>
+      
+      {/* Progress bar */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBar}>
+        <View style={[styles.progressFill, { width: `${(step / 4) * 100}%` }]} />
+      </View>
+        <Text style={styles.progressText}>Paso {step} de 4</Text>
       </View>
 
-      {/* Content */}
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Contenido */}
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
 
-        {/* Navigation Buttons */}
+        {/* Navegación entre pasos */}
         <View style={styles.navigationContainer}>
           {step > 1 && step !== 4 && (
-            <TouchableOpacity 
-              style={[styles.navButton, styles.navButtonSecondary]}
-              onPress={() => setStep(step - 1)}
-            >
-              <Ionicons name="arrow-back" size={20} color="#6B7280" />
-              <Text style={styles.navButtonSecondaryText}>Anterior</Text>
+            <TouchableOpacity style={styles.navButton} onPress={() => setStep(step - 1)}>
+              <Text style={styles.navButtonText}>Anterior</Text>
             </TouchableOpacity>
           )}
-          
           {step < 3 && (
             <TouchableOpacity
               style={[styles.navButton, !canContinue() && styles.navButtonDisabled]}
@@ -505,28 +496,16 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
               onPress={() => setStep(step + 1)}
             >
               <Text style={styles.navButtonText}>Siguiente</Text>
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
             </TouchableOpacity>
           )}
-          
           {step === 3 && (
-            <TouchableOpacity 
-              style={[styles.navButton, styles.submitButton]}
-              onPress={handleSubmit}
-            >
-              <Ionicons name="send" size={20} color="#fff" />
-              <Text style={styles.navButtonText}>Enviar Información</Text>
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+              <Text style={styles.submitButtonText}>Enviar Información</Text>
             </TouchableOpacity>
           )}
-          
           {step === 4 && (
-            <TouchableOpacity 
-              style={[styles.navButton, styles.submitButton, validation === null && styles.navButtonDisabled]}
-              disabled={validation === null}
-              onPress={handleValidation}
-            >
-              <Ionicons name="checkmark-done" size={20} color="#fff" />
-              <Text style={styles.navButtonText}>Concluir Formulario</Text>
+            <TouchableOpacity style={styles.submitButton} onPress={handleValidation}>
+              <Text style={styles.submitButtonText}>Concluir Formulario</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -535,417 +514,109 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
   );
 }
 
-// ---------------- ESTILOS MEJORADOS ----------------
+// ---------------- ESTILOS ----------------
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#F8FAFC" 
-  },
-  headerBackground: { 
-    width: "100%", 
-    height: 160 
-  },
-  headerOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(229, 62, 62, 0.9)",
-    justifyContent: "flex-end",
-  },
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  scrollContainer: { padding: 16, paddingBottom: 40 },
+  headerBackground: { width: "100%", height: 150 },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: 20,
+    paddingVertical: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    marginHorizontal: 20,
+    marginTop: 50,
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold", marginLeft: 16 },
+
+  stepContainer: { marginBottom: 20 },
+  stepTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 8 },
+  stepSubtitle: { fontSize: 16, marginBottom: 16 },
+
+  questionBlock: { marginBottom: 20 },
+  questionLabel: { fontSize: 16, marginBottom: 8, fontWeight: "600" },
+  counterContainer: { flexDirection: "row", alignItems: "center" },
+  counterButton: { padding: 8, backgroundColor: "#ddd", borderRadius: 6, marginHorizontal: 10 },
+  counterValue: { fontSize: 18, fontWeight: "bold" },
+
+  yesNoContainer: { flexDirection: "row", gap: 12 },
+  yesNoButton: { padding: 10, borderWidth: 1, borderColor: "#aaa", borderRadius: 6 },
+  yesNoButtonSelected: { backgroundColor: "#4CAF50", borderColor: "#4CAF50" },
+  yesNoText: { color: "#000" },
+  yesNoTextSelected: { color: "#fff", fontWeight: "bold" },
+
+  optionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  optionButton: { padding: 8, borderWidth: 1, borderColor: "#aaa", borderRadius: 6 },
+  optionButtonSelected: { backgroundColor: "#4CAF50", borderColor: "#4CAF50" },
+  optionText: { color: "#000", fontSize: 14 },
+  optionTextSelected: { color: "#fff", fontWeight: "bold" },
+
+  textInput: { borderWidth: 1, borderColor: "#ccc", borderRadius: 6, padding: 10, minHeight: 60, backgroundColor: "#fff" },
+
+  navigationContainer: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
+  navButton: { 
+    backgroundColor: "#4CAF50", 
+    padding: 12, 
+    borderRadius: 6 
+  },
+  navButtonDisabled: { 
+    backgroundColor: "#cccccc" 
+  },
+  navButtonText: { 
+    color: "#fff", 
+    fontWeight: "bold" 
+  },
+  submitButton: { 
+    flex: 1, 
+    backgroundColor: "#4CAF50", 
+    padding: 12, 
+    borderRadius: 6, 
+    alignItems: "center" 
+  },
+  submitButtonText: { 
+    color: "#fff", 
+    fontWeight: "bold", 
+    fontSize: 16 
+  },
+  
+  progressContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#4CAF50",
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    color: "#718096",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#E53E3E",
+    flex: 1,
+    textAlign: "center",
+    marginHorizontal: 10,
   },
   backButton: {
-    padding: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 12,
-  },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 4,
-  },
-  headerPlaceholder: {
-    width: 40,
-  },
-  stepIndicatorWrapper: {
-    backgroundColor: "#fff",
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  stepIndicatorContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  stepRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  stepCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#E5E7EB",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  stepCircleActive: {
-    backgroundColor: "#4CAF50",
-  },
-  stepCircleCompleted: {
-    backgroundColor: "#10B981",
-  },
-  stepNumber: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  stepNumberActive: {
-    color: "#fff",
-  },
-  stepLine: {
-    width: 40,
-    height: 2,
-    backgroundColor: "#E5E7EB",
-    marginHorizontal: 8,
-  },
-  stepLineCompleted: {
-    backgroundColor: "#10B981",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContainer: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  stepContainer: {
-    marginBottom: 20,
-  },
-  stepHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  stepTextContainer: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  stepTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  stepSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  questionBlock: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  questionLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 16,
-  },
-  counterContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    maxWidth: 200,
-    alignSelf: "center",
-  },
-  counterButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-  },
-  counterValueContainer: {
-    minWidth: 60,
-    alignItems: "center",
-  },
-  counterValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1F2937",
-  },
-  yesNoContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  yesNoButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  yesNoButtonSelected: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
-  },
-  yesNoText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  yesNoTextSelected: {
-    color: "#fff",
-  },
-  optionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  optionButton: {
-    flex: 1,
-    minWidth: (SCREEN_WIDTH - 80) / 3,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  optionButtonSelected: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
-  },
-  optionText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#6B7280",
-    textAlign: "center",
-  },
-  optionTextSelected: {
-    color: "#fff",
-  },
-  foodTypeSection: {
-    marginBottom: 16,
-  },
-  foodTypeLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
-  },
-  frequencyGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  frequencyButton: {
-    flex: 1,
-    minWidth: (SCREEN_WIDTH - 80) / 4,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  frequencyButtonSelected: {
-    backgroundColor: "#FF9800",
-    borderColor: "#FF9800",
-  },
-  frequencyText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#6B7280",
-    textAlign: "center",
-  },
-  frequencyTextSelected: {
-    color: "#fff",
-  },
-  healthGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  healthButton: {
-    flex: 1,
-    minWidth: (SCREEN_WIDTH - 80) / 2,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  healthButtonSelected: {
-    backgroundColor: "#2196F3",
-    borderColor: "#2196F3",
-  },
-  healthText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#6B7280",
-    textAlign: "center",
-  },
-  healthTextSelected: {
-    color: "#fff",
-  },
-  incomeGrid: {
-    gap: 8,
-  },
-  incomeButton: {
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: "#F3F4F6",
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  incomeButtonSelected: {
-    backgroundColor: "#2196F3",
-    borderColor: "#2196F3",
-  },
-  incomeText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#6B7280",
-    textAlign: "center",
-  },
-  incomeTextSelected: {
-    color: "#fff",
-  },
-  textInput: {
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: "#fff",
-    fontSize: 16,
-    color: "#374151",
-    textAlignVertical: "top",
-    minHeight: 100,
-  },
-  validationContainer: {
-    alignItems: "center",
-  },
-  validationCard: {
-    backgroundColor: "#fff",
-    padding: 32,
-    borderRadius: 20,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    width: "100%",
-  },
-  validationTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1F2937",
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  validationSubtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  validationButtonsContainer: {
-    flexDirection: "row",
-    gap: 12,
-    width: "100%",
-  },
-  validationButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    opacity: 0.8,
-  },
-  validationButtonSelected: {
-    opacity: 1,
-    transform: [{ scale: 1.05 }],
-  },
-  validationButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  navigationContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 24,
-    gap: 12,
-  },
-  navButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: "#4CAF50",
-    gap: 8,
-  },
-  navButtonSecondary: {
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-  },
-  navButtonDisabled: {
-    backgroundColor: "#9CA3AF",
-    opacity: 0.6,
-  },
-  navButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  navButtonSecondaryText: {
-    color: "#6B7280",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  submitButton: {
-    backgroundColor: "#10B981",
+    padding: 5,
   },
 });

@@ -39,7 +39,6 @@ import StaffBeneficiariesList from './src/screens/Volunteer/StaffBeneficiariesLi
 import StaffDelivery from './src/screens/Volunteer/StaffDelivery';
 import ScannerQR from './src/screens/Volunteer/ScannerQR';
 import BeneficiaryStudyScreen from './src/screens/Admin/BeneficiaryStudyScreen';
-import EditScreen from './src/screens/Admin/EditNoticeScreen';
 
 import PrivacyPolicyScreen from "./src/screens/PrivacyPolicyScreen";
 import MainContainer from "./src/screens/MainContainer";
