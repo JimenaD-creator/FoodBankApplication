@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, ImageBackground } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { collection, getDocs } from "firebase/firestore";
 import { db, auth } from "../firebaseconfig";
@@ -107,9 +107,25 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-        <Text style={styles.loadingText}>Buscando tu código QR...</Text>
+      <View style={styles.container}>
+        {/* Header para loading */}
+        <ImageBackground 
+          source={require('../../../assets/background.jpg')}
+          style={styles.headerBackground}
+          resizeMode="cover"
+        >
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color="#E53E3E" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Mi Código QR</Text>
+            <View style={{ width: 24 }} />
+          </View>
+        </ImageBackground>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+          <Text style={styles.loadingText}>Buscando tu código QR...</Text>
+        </View>
       </View>
     );
   }
@@ -117,6 +133,20 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
   if (error) {
     return (
       <View style={styles.container}>
+        {/* Header para error */}
+        <ImageBackground 
+          source={require('../../../assets/background.jpg')}
+          style={styles.headerBackground}
+          resizeMode="cover"
+        >
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color="#E53E3E" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Mi Código QR</Text>
+            <View style={{ width: 24 }} />
+          </View>
+        </ImageBackground>
         <View style={styles.errorCard}>
           <Ionicons name="qr-code-outline" size={64} color="#CBD5E0" />
           <Text style={styles.errorTitle}>Sin entregas programadas</Text>
@@ -136,66 +166,110 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
   if (!qrData) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>No se pudo generar el código QR</Text>
-        <TouchableOpacity 
-          style={styles.retryButton}
-          onPress={handleRetry}
+        {/* Header para error sin QR */}
+        <ImageBackground 
+          source={require('../../../assets/background.jpg')}
+          style={styles.headerBackground}
+          resizeMode="cover"
         >
-          <Text style={styles.retryButtonText}>Reintentar</Text>
-        </TouchableOpacity>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color="#E53E3E" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Mi Código QR</Text>
+            <View style={{ width: 24 }} />
+          </View>
+        </ImageBackground>
+        <View style={styles.content}>
+          <Text style={styles.errorText}>No se pudo generar el código QR</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={handleRetry}
+          >
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Código QR</Text>
-      <Text style={styles.subtitle}>
-        Muestra este código al voluntario para recibir tu despensa
-      </Text>
-
-
-      {/* Código QR */}
-      <View style={styles.qrContainer}>
-        <QRCode
-          value={qrData.deliveryId}
-          size={250}
-          backgroundColor="#fff"
-          color="#4CAF50"
-        />
-      </View>
-
-      {/* ID de la entrega para referencia */}
-      <View style={styles.codeContainer}>
-        <Text style={styles.codeLabel}>ID de entrega:</Text>
-        <Text style={styles.codeValue}>{qrData.deliveryId}</Text>
-      </View>
-
-      {/* Instrucciones */}
-      <View style={styles.instructionsCard}>
-        <Text style={styles.instructionsTitle}>Instrucciones:</Text>
-        <View style={styles.instructionItem}>
-          <Ionicons name="phone-portrait-outline" size={16} color="#4CAF50" />
-          <Text style={styles.instructionText}>Mantén este código a la mano</Text>
-        </View>
-        <View style={styles.instructionItem}>
-          <Ionicons name="person-outline" size={16} color="#4CAF50" />
-          <Text style={styles.instructionText}>Muéstralo al voluntario al recibir tu despensa</Text>
-        </View>
-        <View style={styles.instructionItem}>
-          <Ionicons name="lock-closed-outline" size={16} color="#4CAF50" />
-          <Text style={styles.instructionText}>No compartas este código con otras personas</Text>
-        </View>
-      </View>
-
-      {/* Botón de actualizar */}
-      <TouchableOpacity 
-        style={styles.refreshButton}
-        onPress={handleRetry}
+      {/* Header */}
+      <ImageBackground 
+        source={require('../../../assets/background.jpg')}
+        style={styles.headerBackground}
+        resizeMode="cover"
       >
-        <Ionicons name="refresh" size={20} color="#4CAF50" />
-        <Text style={styles.refreshButtonText}>Actualizar estado</Text>
-      </TouchableOpacity>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="#E53E3E" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Mi Código QR</Text>
+          <View style={{ width: 24 }} />
+        </View>
+      </ImageBackground>
+
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        {/* Header Section */}
+        <View style={styles.headerSection}>
+          <Text style={styles.subtitle}>
+            Muestra este código al voluntario para recibir tu despensa
+          </Text>
+        </View>
+
+        {/* QR Code Section */}
+        <View style={styles.qrSection}>
+          <View style={styles.qrContainer}>
+            <QRCode
+              value={qrData.deliveryId}
+              size={280}
+              backgroundColor="#fff"
+              color="#4CAF50"
+            />
+          </View>
+          
+          {/* ID de la entrega para referencia */}
+          <View style={styles.codeContainer}>
+            <Text style={styles.codeLabel}>ID de entrega:</Text>
+            <Text style={styles.codeValue}>{qrData.deliveryId}</Text>
+          </View>
+        </View>
+
+        {/* Instructions Section */}
+        <View style={styles.instructionsCard}>
+          <Text style={styles.instructionsTitle}>Instrucciones</Text>
+          <View style={styles.instructionsList}>
+            <View style={styles.instructionItem}>
+              <View style={styles.instructionIcon}>
+                <Ionicons name="phone-portrait-outline" size={18} color="#4CAF50" />
+              </View>
+              <Text style={styles.instructionText}>Mantén este código a la mano</Text>
+            </View>
+            <View style={styles.instructionItem}>
+              <View style={styles.instructionIcon}>
+                <Ionicons name="person-outline" size={18} color="#4CAF50" />
+              </View>
+              <Text style={styles.instructionText}>Muéstralo al voluntario al recibir tu despensa</Text>
+            </View>
+            <View style={styles.instructionItem}>
+              <View style={styles.instructionIcon}>
+                <Ionicons name="lock-closed-outline" size={18} color="#4CAF50" />
+              </View>
+              <Text style={styles.instructionText}>No compartas este código con otras personas</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Refresh Button */}
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={handleRetry}
+        >
+          <Ionicons name="refresh" size={20} color="#4CAF50" />
+          <Text style={styles.refreshButtonText}>Actualizar estado</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }
@@ -204,69 +278,97 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: "#F7FAFC", 
-    padding: 20 
+  },
+  headerBackground: {
+    paddingTop: 50,
+    paddingBottom: 20,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 20,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#E53E3E",
+  },
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    paddingBottom: 70,
   },
   loadingContainer: { 
     flex: 1, 
     justifyContent: "center", 
-    alignItems: "center" 
+    alignItems: "center",
+    paddingHorizontal: 24,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
     color: "#718096"
   },
-  header: { 
-    fontSize: 26, 
-    fontWeight: "bold", 
-    marginBottom: 12, 
-    textAlign: "center",
-    color: "#2D3748"
+  headerSection: {
+    marginBottom: 24,
+    alignItems: "center",
   },
   subtitle: { 
     fontSize: 16, 
     color: "#718096", 
     textAlign: "center", 
-    marginBottom: 30,
-    lineHeight: 22
+    lineHeight: 22,
+    paddingHorizontal: 20,
   },
   infoCard: {
     backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 25,
-    alignItems: "center",
-    width: "100%",
-    elevation: 2,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  infoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 10,
   },
   communityName: {
     fontSize: 18,
     fontWeight: "600",
     color: "#2D3748",
-    marginBottom: 4,
-    textAlign: "center"
   },
   municipio: {
     fontSize: 14,
     color: "#718096",
-    marginBottom: 8
-  },
-  deliveryDate: {
-    fontSize: 14,
-    color: "#718096",
-    textAlign: "center",
-    textTransform: "capitalize",
-    marginBottom: 8
+    marginBottom: 12,
   },
   beneficiaryName: {
     fontSize: 14,
     color: "#4CAF50",
     fontWeight: "500",
-    textAlign: "center"
   },
+  qrSection: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  instructionsList: {
+    gap: 16,
+  },
+
   qrContainer: { 
     backgroundColor: "#fff", 
     padding: 20, 
@@ -283,7 +385,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
-    alignItems: "center"
+    alignItems: "center",
+    marginTop: 0,
   },
   codeLabel: {
     fontSize: 12,
@@ -293,14 +396,16 @@ const styles = StyleSheet.create({
   codeValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#2D3748",
-    fontFamily: "monospace"
+    color: "#4CAF50",
+    fontFamily: "monospace",
+
   },
   instructionsCard: {
     backgroundColor: "#fff",
     padding: 20,
     borderRadius: 12,
-    marginBottom: 20
+    marginBottom: 20,
+    marginTop: 0,
   },
   instructionsTitle: {
     fontSize: 16,
@@ -379,5 +484,14 @@ const styles = StyleSheet.create({
     color: "#E53E3E",
     textAlign: "center",
     marginBottom: 20
-  }
+  },
+   instructionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 2,
+  },
 });
