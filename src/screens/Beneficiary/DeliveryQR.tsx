@@ -229,11 +229,11 @@ Si acabas de ser agregado a una entrega, espera unos minutos o contacta al admin
             />
           </View>
           
-          {/* ID de la entrega para referencia */}
+          {/* ID de la entrega para referencia 
           <View style={styles.codeContainer}>
             <Text style={styles.codeLabel}>ID de entrega:</Text>
             <Text style={styles.codeValue}>{qrData.deliveryId}</Text>
-          </View>
+          </View>*/}
         </View>
 
         {/* Instructions Section */}
