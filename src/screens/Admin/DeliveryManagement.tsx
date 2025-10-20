@@ -152,7 +152,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
 
     Alert.alert(
       "Éxito", 
-      `Se programaron ${beneficiariesWithQR.length} entregas individuales correctamente`,
+      `Se programaron ${beneficiariesWithQR.length} entregas correctamente`,
       [
         { text: "OK", onPress: () => navigation.goBack() }
       ]
