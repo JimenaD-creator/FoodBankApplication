@@ -106,6 +106,13 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <ImageBackground source={require("../../assets/background.jpg")} style={styles.container} resizeMode="cover">
+    <TouchableOpacity
+      style={styles.backButton}
+      onPress={() => navigation.navigate("Landing")}
+      disabled={loading}
+    >
+      <Ionicons name="arrow-back" size={26} color="#E53E3E" />
+    </TouchableOpacity>
       <View style={styles.overlay} />
       <View style={styles.logoContainer}>
         <Image source={require("../../assets/logo_no_background.png")} style={styles.logo} resizeMode="contain" />
@@ -245,6 +252,15 @@ const styles = StyleSheet.create({
     color: "#E53E3E",
     fontSize: 14,
     marginVertical: 10,
+  },
+   backButton: {
+    position: "absolute",
+    top: 50, // adjust for safe area on different devices
+    left: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    borderRadius: 30,
+    padding: 8,
+    zIndex: 10,
   },
   signUp: {
     textAlign: "center",
