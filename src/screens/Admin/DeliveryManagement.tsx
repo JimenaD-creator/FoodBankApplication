@@ -18,7 +18,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
   const [volunteers, setVolunteers] = useState<any[]>([]);
   const [volunteerFilter, setVolunteerFilter] = useState<string>("");
   
-  // Función para generar ID único compatible con React Native
+  // Función para generar ID único 
   const generateUniqueId = () => {
     const timestamp = Date.now().toString(36);
     const randomPart = Math.random().toString(36).substring(2, 15);
@@ -262,7 +262,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
             </Picker>
           </View>
 
-          {/* Info de comunidad seleccionada - Mejorada */}
+          {/* Info de comunidad seleccionada*/}
           {selectedCommunityData && (
             <View style={styles.communityInfoCard}>
               <View style={styles.communityStats}>
@@ -283,7 +283,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
           )}
         </View>
 
-        {/* Tarjeta de Fecha y Hora - Mejorada */}
+        {/* Tarjeta de Fecha y Hora */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="calendar" size={20} color="#E53E3E" />
@@ -357,14 +357,14 @@ export default function DeliveryManagementScreen({ navigation }: any) {
           />
         )}
 
-        {/* Tarjeta de Voluntarios - Mejorada */}
+        {/* Tarjeta de Voluntarios */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="people" size={20} color="#E53E3E" />
             <Text style={styles.cardTitle}>Asignar voluntarios</Text>
           </View>
 
-          {/* Filtro de comunidad para voluntarios - CORREGIDO */}
+          {/* Filtro de comunidad para voluntarios */}
           <View style={styles.filterContainer}>
             <Text style={styles.filterLabel}>Seleccionar comunidad:</Text>
             <View style={styles.filterPickerContainer}>
@@ -392,7 +392,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Lista de voluntarios filtrados - Mejorada */}
+          {/* Lista de voluntarios filtrados */}
           {filteredVolunteers.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="people-outline" size={48} color="#E2E8F0" />
@@ -454,7 +454,7 @@ export default function DeliveryManagementScreen({ navigation }: any) {
           )}
         </View>
 
-        {/* Botón Guardar - Mejorado */}
+        {/* Botón Guardar */}
         <TouchableOpacity 
           style={styles.saveButton} 
           onPress={handleSave}

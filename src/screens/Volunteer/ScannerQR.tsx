@@ -80,7 +80,7 @@ export default function ScannerQR() {
     console.log("✅ QR COINCIDE - Marcando como entregada");
     await marcarComoEntregado();
   } else {
-    // Buscar en TODAS las entregas del beneficiario por el QR escaneado
+    // Buscar en todas las entregas del beneficiario por el QR escaneado
     console.log("🔍 Buscando entrega con QR escaneado en todas las entregas del beneficiario...");
     
     try {

@@ -145,10 +145,8 @@ const getStatusIcon = (status: string) => {
       style={styles.card} 
       activeOpacity={0.8}
       onPress={() => {
-        // Aquí podrías navegar a un detalle del staff
       }}
     >
-      {/* Header con foto y nombre */}
       <View style={styles.cardHeader}>
         <View style={styles.avatarContainer}>
           <View style={[styles.avatar, { backgroundColor: getStatusColor(item.status) + '20' }]}>

@@ -39,7 +39,6 @@ export default function BeneficiaryQR({ navigation }: any) {
     let upcomingDelivery = null;
     const now = new Date();
 
-    // Buscar la entrega MÁS PRÓXIMA (no entregada y con fecha futura o de hoy)
     deliveriesSnapshot.forEach((doc) => {
       const delivery = doc.data();
       const deliveryDate = delivery.deliveryDate.toDate();
@@ -48,7 +47,6 @@ export default function BeneficiaryQR({ navigation }: any) {
       console.log(`   Estado: ${delivery.status}`);
       console.log(`   QR: ${delivery.beneficiary?.qrCode}`);
 
-      // Solo considerar entregas no entregadas y con fecha futura/hoy
       if (delivery.status !== "entregada" && deliveryDate >= now) {
         if (!upcomingDelivery || deliveryDate < upcomingDelivery.deliveryDate.toDate()) {
           console.log("✅ ENCONTRADA ENTREGA PRÓXIMA");

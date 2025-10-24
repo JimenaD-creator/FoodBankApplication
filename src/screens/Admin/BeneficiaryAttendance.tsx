@@ -189,7 +189,7 @@ export default function DeliveryAssistanceScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        {/* Botones de acción con gradientes */}
+        {/* Botones de acción */}
         <View style={styles.actions}>
 
           <TouchableOpacity 

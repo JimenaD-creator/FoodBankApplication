@@ -85,31 +85,29 @@ export default function StaffDashboard() {
       const tomorrow = new Date(today)
       tomorrow.setDate(tomorrow.getDate() + 1)
 
-      // ✅ CORREGIDO: Filtrar entregas de hoy que NO estén entregadas
       const todayList = assignedToMe.filter((d) => {
         const deliveryDate = d.deliveryDate?.toDate()
         return deliveryDate && 
                deliveryDate >= today && 
                deliveryDate < tomorrow && 
-               d.status !== "Entregado" // ✅ Solo mostrar las que no están entregadas
+               d.status !== "Entregado" 
       })
 
-      // ✅ NUEVO: Filtrar entregas de hoy que SÍ están entregadas
+
       const completedTodayList = assignedToMe.filter((d) => {
         const deliveryDate = d.deliveryDate?.toDate()
         return deliveryDate && 
                deliveryDate >= today && 
                deliveryDate < tomorrow && 
-               d.status === "Entregado" // ✅ Solo las que SÍ están entregadas
+               d.status === "Entregado" 
       })
 
-      // ✅ CORREGIDO: Para entregas próximas, también excluir las entregadas
       const upcomingList = assignedToMe
         .filter((d) => {
           const deliveryDate = d.deliveryDate?.toDate()
           return deliveryDate && 
                  deliveryDate >= tomorrow && 
-                 d.status !== "Entregado" // ✅ Solo mostrar las que no están entregadas
+                 d.status !== "Entregado" 
         })
         .sort((a, b) => (a.deliveryDate?.toDate() || 0) - (b.deliveryDate?.toDate() || 0))
 
@@ -177,7 +175,6 @@ export default function StaffDashboard() {
     })
   }
 
-  // Función para truncar nombres largos
   const truncateName = (name: string, maxLength: number = 20) => {
     if (!name) return "Sin nombre"
     if (name.length <= maxLength) return name
@@ -362,7 +359,7 @@ export default function StaffDashboard() {
           </View>
         )}
 
-        {/* ✅ NUEVA SECCIÓN: Entregas de hoy completadas */}
+        {/* Entregas de hoy completadas */}
         {completedTodayDeliveries.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>

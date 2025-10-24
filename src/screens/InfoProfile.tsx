@@ -25,7 +25,6 @@ export default function ProfileScreen({ navigation }: any){
 
                     if(userSnap.exists()){
                         const data = userSnap.data();
-                        // Separar nombre y apellido si vienen en fullName
                         const fullName = data?.fullName || "";
                         const nameParts = fullName.split(' ');
                         const nombre = nameParts[0] || "";
@@ -53,7 +52,6 @@ export default function ProfileScreen({ navigation }: any){
             const user = auth.currentUser;
             if(user){
                 const userRef = doc(db, "users", user.uid);
-                // Combinar nombre y apellido para guardar como fullName
                 const fullName = `${userData.nombre} ${userData.apellido}`.trim();
                 
                 await updateDoc(userRef, {

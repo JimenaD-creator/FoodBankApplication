@@ -170,7 +170,7 @@ export default function PreStudyForm({ navigation }: any) {
     return true;
   };
 
-  // 🎯 NUEVA FUNCIÓN: Resumen de datos opcionales
+  // 🎯 Resumen de datos opcionales
   const getOptionalDataSummary = () => {
     const selectedCount = [
       userConsents.incomeData,

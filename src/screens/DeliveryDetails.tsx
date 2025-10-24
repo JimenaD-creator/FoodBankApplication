@@ -20,7 +20,6 @@ interface Product {
   quantity: number; 
 }
 
-// En la interfaz Delivery, añade el campo volunteers
 interface Delivery {
   id: string;
   communityName: string;
@@ -28,10 +27,9 @@ interface Delivery {
   deliveryDate: any;
   products: { [productId: string]: { quantity: number } };
   status: string;
-  volunteers: Array<{ id: string; name: string }>; // Añadir este campo
+  volunteers: Array<{ id: string; name: string }>; 
 }
 
-// En el componente, añade esta función para obtener los nombres de los voluntarios
 const getVolunteersText = (volunteers: Array<{ id: string; name: string }>) => {
   if (!volunteers || volunteers.length === 0) {
     return "No asignado";
@@ -204,7 +202,7 @@ export default function DeliveryDetails({ route, navigation }: any) {
                 <Text style={styles.detailValue}>{formatTime(delivery.deliveryDate)}</Text>
               </View>
             </View>
-            {/* Añade este DetailItem después de la sección de hora */}
+            
 <View style={styles.detailItem}>
   <View style={[styles.detailIconContainer, { backgroundColor: '#E0F2FE' }]}>
     <Ionicons name="people-outline" size={20} color="#0EA5E9" />

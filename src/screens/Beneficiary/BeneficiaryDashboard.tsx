@@ -151,8 +151,6 @@ export default function BeneficiaryDashboard() {
         return "#718096"
     }
   }
-
-  // Navigation handlers with proper typing
   const handleDeliveryDetails = (delivery: Delivery) => {
     navigation.navigate("DeliveryDetails", { delivery })
   }
@@ -173,12 +171,11 @@ export default function BeneficiaryDashboard() {
     )
   }
 
-  // ✅ NUEVO: Separar entregas futuras y pasadas
+  // Separar entregas futuras y pasadas
   const now = new Date();
   const upcomingDeliveries = deliveries.filter(d => d.deliveryDate.toDate() >= now);
   const pastDeliveries = deliveries.filter(d => d.deliveryDate.toDate() < now);
 
-  // Lógica para determinar qué mostrar
   const showFormOnly = userStatus === "Pendiente" && !hasCompletedForm;
   const showAwaitingReview = userStatus === "Pendiente" && hasCompletedForm;
   const showContactMessage = userStatus === "Evaluación";
@@ -368,7 +365,7 @@ export default function BeneficiaryDashboard() {
               </>
             )}
 
-            {/* ✅ CORREGIDO: Mensaje si no hay entregas - SÓLO cuando es usuario activo y no tiene NINGUNA entrega */}
+            {/* Mensaje si no hay entregas - SÓLO cuando es usuario activo y no tiene NINGUNA entrega */}
             {showDeliveries && deliveries.length === 0 && (
               <View style={styles.emptyState}>
                 <Ionicons name="calendar-outline" size={64} color="#E2E8F0" />

@@ -154,26 +154,26 @@ export default function DeliveryHistoryScreen({ navigation }: any) {
   const getStatusBackgroundColor = (status: string) => {
     switch (status) {
       case "Entregado":
-        return "#D1FAE5"; // Verde claro
+        return "#D1FAE5"; 
       case "Programada":
-        return "#DBEAFE"; // Azul claro
+        return "#DBEAFE"; 
       case "Cancelada":
-        return "#FEE2E2"; // Rojo claro
+        return "#FEE2E2"; 
       default:
-        return "#F9FAFB"; // Gris claro
+        return "#F9FAFB"; 
     }
   };
 
   const getDateBoxColor = (status: string) => {
     switch (status) {
       case "Entregado":
-        return "#A7F3D0"; // Verde más intenso
+        return "#A7F3D0"; 
       case "Programada":
-        return "#93C5FD"; // Azul más intenso
+        return "#93C5FD"; 
       case "Cancelada":
-        return "#FECACA"; // Rojo más intenso
+        return "#FECACA"; 
       default:
-        return "#E5E7EB"; // Gris más intenso
+        return "#E5E7EB"; 
     }
   };
 

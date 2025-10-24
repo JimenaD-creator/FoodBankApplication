@@ -94,7 +94,6 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
         status: "Evaluación"
       });
 
-      // Navigate to Step 4 instead of going back
       setStep(4);
       
       Alert.alert(
@@ -421,6 +420,7 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
     </View>
   );
 
+  // ---------------- STEP 4 ----------------
   const renderStep4 = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Validación de Beneficiario</Text>
@@ -514,7 +514,6 @@ export default function SocioNutritionalFormScreen({ navigation }: any) {
   );
 }
 
-// ---------------- ESTILOS ----------------
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   scrollContainer: { padding: 16, paddingBottom: 40 },
