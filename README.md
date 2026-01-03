@@ -73,7 +73,7 @@ These principles align with data protection regulations such as GDPR concepts an
    ```bash
    npm start
    ```
-6. Run the app on an emulator or physical device using Expo Go scanning the QR code.
+6. Run the app on an emulator or physical device using Expo Go, scanning the QR code.
 
 ## 🧪 Testing & Validation
 
