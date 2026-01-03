@@ -78,7 +78,7 @@ These principles align with data protection regulations such as GDPR concepts an
 
 ## 🎓 Academic Context
 
-- This project was developed as part of a university course focused on:
+This project was developed as part of a university course focused on:
 - Ethical, legal, and technical aspects of cybersecurity
 - Risk mitigation methodologies
 - Secure mobile application development
