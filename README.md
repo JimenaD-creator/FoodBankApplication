@@ -66,8 +66,14 @@ These principles align with data protection regulations such as GDPR concepts an
    git clone https://github.com/JimenaD-creator/FoodBankApplication.git
    ```
 2. Install dependencies:
-3. Start the Expo development server:
-4. Run the app on an emulator or physical device using Expo Go.
+   ```bash
+   npm install
+   ```
+4. Start the Expo development server:
+   ```bash
+   npm start
+   ```
+6. Run the app on an emulator or physical device using Expo Go scanning the QR code.
 
 ## 🧪 Testing & Validation
 
