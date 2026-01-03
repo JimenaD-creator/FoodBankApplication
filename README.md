@@ -63,5 +63,27 @@ These principles align with data protection regulations such as GDPR concepts an
 
 1. Clone the repository:
    ```bash
-   git clone 
+   git clone https://github.com/JimenaD-creator/FoodBankApplication.git
+   ```
+2. Install dependencies:
+3. Start the Expo development server:
+4. Run the app on an emulator or physical device using Expo Go.
+
+## 🧪 Testing & Validation
+
+- Manual testing of offline and online scenarios.
+- Validation of encrypted storage through SecureStore.
+- Network connectivity tests under public Wi-Fi conditions.
+- Logging mechanisms used to verify security flows during development.
+
+## 🎓 Academic Context
+
+- This project was developed as part of a university course focused on:
+- Ethical, legal, and technical aspects of cybersecurity
+- Risk mitigation methodologies
+- Secure mobile application development
+- OWASP Mobile Top 10 awareness
+
+## 📄 License
+This project is for academic and educational purposes only.
 
